@@ -1,0 +1,83 @@
+name: Build media helper (one-click binaries)
+
+# Produces double-clickable helper binaries for macOS, Windows and Linux.
+#  - Push a tag like `helper-v1.0.0`  -> builds all three and attaches them to a GitHub Release.
+#  - Manual "Run workflow"            -> builds all three and uploads them as artifacts.
+
+on:
+  push:
+    tags:
+      - "helper-v*"
+  workflow_dispatch:
+
+permissions:
+  contents: write
+
+jobs:
+  build:
+    name: Build (${{ matrix.os }})
+    runs-on: ${{ matrix.os }}
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          - os: macos-latest
+            asset: la26v1-media-helper-macos
+            ext: ""
+          - os: windows-latest
+            asset: la26v1-media-helper-windows
+            ext: ".exe"
+          - os: ubuntu-latest
+            asset: la26v1-media-helper-linux
+            ext: ""
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+
+      - name: Install PyInstaller
+        run: python -m pip install --upgrade pip pyinstaller
+
+      # Optional: fully-bundle a static ffmpeg (offline binary). Uncomment to
+      # embed ffmpeg instead of downloading it on first run.
+      # - name: Bundle ffmpeg (optional)
+      #   run: python media-helper/fetch_bundled.py   # you'd add this helper
+
+      - name: Build binary
+        working-directory: media-helper
+        run: pyinstaller helper.spec
+
+      - name: Rename artifact
+        shell: bash
+        working-directory: media-helper/dist
+        run: |
+          if [ -f "la26v1-media-helper${{ matrix.ext }}" ]; then
+            mv "la26v1-media-helper${{ matrix.ext }}" "${{ matrix.asset }}${{ matrix.ext }}"
+          fi
+          ls -la
+
+      # --- Signing placeholders (add secrets, then uncomment) --------------
+      # macOS notarization:
+      #   - Import Developer ID cert, `codesign --deep --options runtime`,
+      #     then `xcrun notarytool submit` + `xcrun stapler staple`.
+      # Windows Authenticode:
+      #   - `signtool sign /f cert.pfx /p ${{ secrets.WIN_CERT_PW }} ...`
+      # Without signing, users must right-click -> Open (macOS) or
+      # "More info -> Run anyway" (Windows SmartScreen) on first launch.
+
+      - name: Upload build artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: ${{ matrix.asset }}
+          path: media-helper/dist/${{ matrix.asset }}${{ matrix.ext }}
+          if-no-files-found: error
+
+      - name: Attach to release (on tag)
+        if: startsWith(github.ref, 'refs/tags/')
+        uses: softprops/action-gh-release@v2
+        with:
+          files: media-helper/dist/${{ matrix.asset }}${{ matrix.ext }}

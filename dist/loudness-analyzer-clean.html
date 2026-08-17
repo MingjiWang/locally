@@ -1,0 +1,2844 @@
+<!doctype html>
+<!--
+MIT License
+
+Copyright (c) 2025 Mingji Wang
+
+Permission is hereby granted, free of charge, to any person obtaining a copy
+of this software and associated documentation files (the "Software"), to deal
+in the Software without restriction, including without limitation the rights
+to use, copy, modify, merge, publish, distribute, sublicense, and/or sell
+copies of the Software, and to permit persons to whom the Software is
+furnished to do so, subject to the following conditions:
+
+The above copyright notice and this permission notice shall be included in all
+copies or substantial portions of the Software.
+
+THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
+IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
+FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE
+AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
+LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
+OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
+SOFTWARE.
+-->
+<html>
+<head>
+  <link rel="stylesheet" href="./modern.css?v=7" />
+ <meta charset="utf-8">
+ <title>LKFS & MPEG-1 Masking Analyzer</title>
+
+ <!--used windows XP UI style from xp.css -->
+ <style>
+/* Main page margins */
+body {
+ margin: 16px;
+}
+
+/* App max-width container */
+.app {
+ max-width: 1100px;
+ margin: 0 auto;
+}
+
+/* Subtitle text under title bar */
+.subtitle {
+ margin: 4px 0 16px;
+ font-size: 0.9rem;
+}
+
+/* Generic flex row for controls (file, buttons, etc.) */
+.row {
+ display: flex;
+ flex-wrap: wrap;
+ gap: 8px;
+ align-items: center;
+ margin-bottom: 10px;
+}
+
+/*Label style inside .row */
+.row label {
+ font-size: 0.9rem;
+}
+
+/*Section headings*/
+.section-title {
+ font-size: 0.95rem;
+ font-weight: 700;
+ margin: 16px 0 6px;
+ text-transform: uppercase;
+ letter-spacing: 0.06em;
+}
+
+/* Grid layout for metric cards */
+.metrics-grid {
+ display: grid;
+ grid-template-columns: repeat(auto-fit, minmax(140px, 1fr));
+ gap: 8px;
+ margin-top: 6px;
+}
+
+/* Individual metric*/
+.metric {
+ background: #ffffff;
+ border-radius: 0;
+ padding: 6px 8px;
+ border: 1px solid #808080;
+}
+
+/* Metric label (small caps style) */
+.metric-label {
+ font-size: 0.75rem;
+ text-transform: uppercase;
+ letter-spacing: 0.08em;
+ margin-bottom: 4px;
+}
+
+/* Metric numeric value */
+.metric-value {
+ font-size: 1.05rem;
+ font-variant-numeric: tabular-nums;
+}
+
+/* Metric subtext*/
+.metric-sub {
+ font-size: 0.75rem;
+ margin-top: 2px;
+}
+
+/* tables for streaming penalties */
+table {
+ width: 100%;
+ border-collapse: collapse;
+ font-size: 0.8rem;
+ margin-top: 4px;
+}
+
+th, td {
+ padding: 4px 6px;
+ text-align: left;
+}
+
+th {
+ border-bottom: 1px solid #808080;
+ font-weight: 600;
+}
+
+tr:nth-child(even) td {
+ background: #f0f0f0;
+}
+
+/* Penalty positive (turn down) */
+.penalty-pos {
+ color: #c65300;
+ font-weight: 600;
+}
+
+/* Penalty negative / zero (turn up or no change) */
+.penalty-neg, .penalty-zero {
+ color: #007000;
+ font-weight: 600;
+}
+
+/* General controls row for playback, alpha, etc. */
+.controls-row {
+ display: flex;
+ flex-wrap: wrap;
+ gap: 8px;
+ align-items: center;
+ margin: 8px 0 4px;
+}
+
+/* Smaller dropdown size */
+.select-small {
+ font-size: 0.85rem;
+}
+
+/* Small tag-like text */
+.tag {
+ font-size: 0.75rem;
+}
+
+/* Layout for meters block and EQ block */
+.meters {
+ display: grid;
+ grid-template-columns: minmax(0, 1fr) minmax(0, 1.4fr);
+ gap: 8px;
+ margin-top: 6px;
+}
+
+/* Meter card container */
+.meter-block {
+ background: #ffffff;
+ border-radius: 0;
+ padding: 6px 8px;
+ border: 1px solid #808080;
+}
+
+/* Each line in meter block: label + value */
+.meter-line {
+ font-size: 0.8rem;
+ display: flex;
+ justify-content: space-between;
+ margin-bottom: 4px;
+ font-variant-numeric: tabular-nums;
+}
+
+/* Background track of horizontal bar meter */
+.bar-bg {
+ width: 100%;
+ height: 8px;
+ background: #ffffff;
+ border-radius: 0;
+ overflow: hidden;
+ border: 1px solid #808080;
+}
+
+/* Filling of bar meter (gradient color) */
+.bar-fill {
+ height: 100%;
+ width: 0%;
+ background: linear-gradient(90deg,#22c55e,#eab308,#ef4444);
+ transition: width 0.08s linear;
+}
+
+/* Audio seekbar width */
+input[type="range"].seek {
+ width: 100%;
+}
+
+/* Default canvas style: full width, fixed height, black bg */
+canvas {
+ width: 100%;
+ height: 260px;
+ display: block;
+ background: #000000;
+ border: 1px solid #808080;
+}
+
+/* Loudness curve canvas: override to smaller height, white bg in JS */
+#loudness-curve {
+ height: 200px;
+ background: #ffffff;
+}
+
+/* Caption text under heatmaps / plots */
+.heatmap-caption {
+ font-size: 0.75rem;
+ margin-top: 4px;
+}
+
+/* Footer note style */
+.footer-note {
+ font-size: 0.7rem;
+ margin-top: 8px;
+}
+
+/* Small numeric input for window length */
+input[type="number"].small-num {
+ width: 60px;
+ padding: 2px 4px;
+ font-size: 0.8rem;
+}
+
+/* Range width for alpha slider */
+input[type="range"].alpha-range {
+ width: 130px;
+}
+
+/* Responsive: stack meters on small screens */
+@media (max-width: 720px) {
+ .meters {
+ grid-template-columns: 1fr;
+ }
+}
+
+/* Math block background images */
+
+/* BS.1770 math block background */
+.math-bg-1770::before {
+ content: "";
+ position: absolute;
+ inset: 0;
+ background: url("https://raw.githubusercontent.com/MingjiWang/chilling_lopo_pics/main/Screenshot%202025-11-16%20035849.png") center/cover no-repeat;
+ opacity: 0.7;
+ z-index: 0;
+ pointer-events: none;
+}
+
+/* MP3 psychoacoustic model math block background */
+.math-bg-mp3::before {
+ content: "";
+ position: absolute;
+ inset: 0;
+ background: url("https://raw.githubusercontent.com/MingjiWang/chilling_lopo_pics/main/Screenshot%202025-11-16%20040234.png") center/cover no-repeat;
+ opacity: 0.7;
+ z-index: 0;
+ pointer-events: none;
+}
+
+/* Persistent masking math block background */
+.math-bg-masking::before {
+ content: "";
+ position: absolute;
+ inset: 0;
+ background: url("https://raw.githubusercontent.com/MingjiWang/chilling_lopo_pics/main/Screenshot%202025-11-16%20040130.png") center/cover no-repeat;
+ opacity: 0.7;
+ z-index: 0;
+ pointer-events: none;
+}
+
+/* Zwicker loudness math block background */
+.math-bg-zwicker::before {
+ content: "";
+ position: absolute;
+ inset: 0;
+ background: url("https://raw.githubusercontent.com/MingjiWang/chilling_lopo_pics/main/Screenshot%202025-11-16%20040031.png") center/cover no-repeat;
+ opacity: 0.7;
+ z-index: 0;
+ pointer-events: none;
+}
+
+/* Collapsible math block layout */
+
+.math-block {
+ margin-top: 6px;
+ padding: 6px 8px 8px;
+ border-radius: 0;
+ background: #ffffff;
+ border: 1px dashed #808080;
+ font-size: 0.8rem;
+ position: relative;
+ overflow: hidden;
+}
+
+/* Summary header inside <details> as clickable bar */
+.math-block > summary {
+ list-style: none;
+ cursor: pointer;
+ font-size: 0.75rem;
+ text-transform: uppercase;
+ letter-spacing: 0.08em;
+ margin: -6px -8px 6px;
+ padding: 4px 8px;
+ font-weight: 700;
+ background: #d4d0c8;
+ border-bottom: 1px solid #808080;
+}
+
+/* Hide default disclosure triangle (WebKit) */
+.math-block > summary::-webkit-details-marker {
+ display: none;
+}
+
+/* Collapsed / open indicator prefix */
+.math-block > summary::before {
+ content: "[–] ";
+ font-weight: normal;
+}
+
+.math-block[open] > summary::before {
+ content: "[–] ";
+}
+
+.math-block:not([open]) > summary::before {
+ content: "[+] ";
+}
+
+/* Ensure inner content sits above ::before background */
+.math-block > *:not(summary) {
+ position: relative;
+ z-index: 1;
+}
+
+/* Paragraph spacing inside math blocks */
+.math-block p {
+ margin: 4px 0;
+}
+
+/* Title style inside math content (not summary) */
+.math-title {
+ font-size: 0.75rem;
+ text-transform: uppercase;
+ letter-spacing: 0.08em;
+ margin-bottom: 4px;
+ font-weight: 700;
+}
+
+/* Debug output block styling */
+pre#output {
+ background: #ffffff;
+ border: 1px solid #808080;
+ padding: 6px 8px;
+ border-radius: 0;
+}
+
+/* Fonts: XP pixel font everywhere except MathJax */
+
+/* 1) Apply XP pixel font to entire UI (excluding MathJax nodes) */
+body,
+.app,
+.app *:not(.mjx-container):not(.mjx-container *):not(.MathJax):not(.MathJax *):not(mjx-container):not(mjx-container *):not(mjx-math):not(mjx-math *):not(mjx-assistive):not(mjx-assistive *):not(mjx-script):not(mjx-script *) {
+ font-family: "JetBrains Mono", "SF Mono", ui-monospace, "Menlo", monospace !important;
+ -webkit-font-smoothing: antialiased;
+ font-size: 14px;
+}
+
+/* 2) MathJax equations — use clean LaTeX-style serif font */
+mjx-container,
+.mjx-container,
+mjx-math,
+mjx-assistive,
+mjx-script,
+.mjx-math {
+ font-family: "Latin Modern Math", "STIX Two Math", "CMU Serif", serif !important;
+ -webkit-font-smoothing: antialiased !important;
+ font-size: 100% !important;
+}
+
+/* Liquid glass overrides removed - see modern.css */
+</style>
+</head>
+<body>
+ <div class="app">
+ <div class="window" style="max-width: 1100px;">
+ <div class="title-bar">
+ <div class="title-bar-text">
+ Loudness &amp; Masking Analyzer
+ </div>
+ <div class="title-bar-controls">
+ <button aria-label="Minimize"></button>
+ <button aria-label="Maximize"></button>
+ <button aria-label="Close"></button>
+ </div>
+ </div>
+
+ <div class="window-body">
+ <!--file input for main and reference audio and analyze button-->
+ <div class="row">
+ <label for="file"><strong>Audio file</strong></label>
+ <input id="file" type="file" accept="audio/*">
+ <label for="file-ref"><strong>Ref track (optional)</strong></label>
+ <input id="file-ref" type="file" accept="audio/*">
+ <button id="analyze" disabled>Analyze</button>
+ </div>
+
+ <!-- Loudness for main track -->
+ <div class="section-title">Loudness Metrics (K-weighted, BS.1770-5) — Main Track</div>
+ <div class="metrics-grid">
+ <div class="metric">
+ <div class="metric-label">Integrated Loudness</div>
+ <div class="metric-value" id="metric-integrated">–</div>
+ <div class="metric-sub">LUFS (LKFS)</div>
+ </div>
+ <div class="metric">
+ <div class="metric-label">Loudness Range (LRA)</div>
+ <div class="metric-value" id="metric-lra">–</div>
+ <div class="metric-sub">LU (EBU R128)</div>
+ </div>
+ <div class="metric">
+ <div class="metric-label">Min Local Loudness</div>
+ <div class="metric-value" id="metric-min">–</div>
+ <div class="metric-sub">per 400 ms block</div>
+ </div>
+ <div class="metric">
+ <div class="metric-label">Max Local Loudness</div>
+ <div class="metric-value" id="metric-max">–</div>
+ <div class="metric-sub">per 400 ms block</div>
+ </div>
+ <div class="metric">
+ <div class="metric-label">Blocks Kept</div>
+ <div class="metric-value" id="metric-blocks">–</div>
+ <div class="metric-sub">after gating</div>
+ </div>
+ </div>
+
+ <!-- Loudness for reference track -->
+ <div class="section-title">Reference Loudness Metrics (if provided)</div>
+ <div class="metrics-grid">
+ <div class="metric">
+ <div class="metric-label">Integrated Loudness (Ref)</div>
+ <div class="metric-value" id="metric-integrated-ref">–</div>
+ <div class="metric-sub">LUFS (LKFS)</div>
+ </div>
+ <div class="metric">
+ <div class="metric-label">Loudness Range (Ref)</div>
+ <div class="metric-value" id="metric-lra-ref">–</div>
+ <div class="metric-sub">LU</div>
+ </div>
+ <div class="metric">
+ <div class="metric-label">Min Local (Ref)</div>
+ <div class="metric-value" id="metric-min-ref">–</div>
+ <div class="metric-sub">per 400 ms block</div>
+ </div>
+ <div class="metric">
+ <div class="metric-label">Max Local (Ref)</div>
+ <div class="metric-value" id="metric-max-ref">–</div>
+ <div class="metric-sub">per 400 ms block</div>
+ </div>
+ <div class="metric">
+ <div class="metric-label">Blocks Kept (Ref)</div>
+ <div class="metric-value" id="metric-blocks-ref">–</div>
+ <div class="metric-sub">after gating</div>
+ </div>
+ </div>
+
+ <!-- Collapsible block explaining BS1770 equations -->
+ <details class="math-block math-bg-1770" close>
+ <summary>BS.1770-5 Core Equations</summary>
+
+ <p>Filter stages (K-weighting):</p>
+ <p>\[
+ H_1(z) = \frac{b_0 + b_1 z^{-1} + b_2 z^{-2}}
+ {1 + a_1 z^{-1} + a_2 z^{-2}},\quad
+ (b_0,b_1,b_2)=(1.5351,-2.6917,1.1984),\ 
+ (a_1,a_2)=(-1.6907,0.7325)
+ \]</p>
+ <p>\[
+ H_2(z) = \frac{1 - 2z^{-1} + z^{-2}}
+ {1 - 1.9900 z^{-1} + 0.9901 z^{-2}}
+ \]</p>
+
+ <p>Block energy per channel \(i\), 400&nbsp;ms blocks:</p>
+ <p>\[
+ z_i = \frac{1}{N}\sum_{n=0}^{N-1} y_i^2[n]
+ \]</p>
+
+ <p>Channel-weighted loudness for one block:</p>
+ <p>\[
+ L_K = -0.691 + 10\log_{10}\Bigl(\sum_i G_i z_i\Bigr)
+ \]</p>
+
+ <p>Two-stage gating:</p>
+ <p>\[
+ \Gamma_a = -70\ \mathrm{LKFS},\qquad
+ \Gamma_r = L_{\text{prelim}} - 10\ \mathrm{LU}
+ \]</p>
+
+ <p>Integrated loudness over gated blocks \(J_g\):</p>
+ <p>\[
+ L_{\text{integrated}}
+ =
+ -0.691 + 10\log_{10}\!\left(
+ \frac{1}{|J_g|}
+ \sum_{j \in J_g}\sum_i G_i z_{ij}
+ \right)
+ \]</p>
+
+ <p>Loudness Range (LRA), 3&nbsp;s windows, 1&nbsp;s hop:</p>
+ <p>\[
+ \mathrm{LRA} = P_{95}(l_j) - P_{10}(l_j)
+ \]</p>
+ </details>
+
+ <!-- Loudness curve -->
+ <div class="section-title">Loudness Curve & Region Selection</div>
+ <canvas id="loudness-curve"></canvas>
+ <p class="heatmap-caption">
+ Blue line = local K-weighted loudness of main track. Shaded area = analysis region (shared for main + ref).
+ Region selection: loop: 1st click start, 2nd click ending...
+ </p>
+
+ <!-- Playback control -->
+ <div class="section-title">Playback (Main Track)</div>
+ <div class="controls-row">
+ <button id="play-original">Play Original</button>
+ <button id="play-normalized">Play Normalized</button>
+ <button id="stop-playback">Stop</button>
+ <select id="platform-select" class="select-small">
+ <option value="spotify">Spotify (-14 LUFS)</option>
+ <option value="youtube">YouTube (-14 LUFS)</option>
+ <option value="apple">Apple (-16 LUFS)</option>
+ <option value="tidal">Tidal/Amazon (-14 LUFS)</option>
+ </select>
+ </div>
+
+ <!-- playback bar -->
+ <div class="controls-row">
+ <input id="seek-bar" type="range" class="seek" min="0" max="0" step="0.01" value="0">
+ <span id="seek-label" class="tag">00:00 / 00:00</span>
+ </div>
+
+ <!-- Region analysis metrics for zwicker loudness -->
+ <div class="section-title">Region Analysis (Main vs Reference)</div>
+ <div class="metrics-grid">
+ <div class="metric">
+ <div class="metric-label">Main Crest Factor</div>
+ <div class="metric-value" id="region-main-crest">–</div>
+ <div class="metric-sub">dB (peak − RMS)</div>
+ </div>
+ <div class="metric">
+ <div class="metric-label">Main Peak Density</div>
+ <div class="metric-value" id="region-main-peakdensity">–</div>
+ <div class="metric-sub">peaks / second</div>
+ </div>
+ <div class="metric">
+ <div class="metric-label">Main Zwicker Loudness</div>
+ <div class="metric-value" id="region-main-zwicker">–</div>
+ <div class="metric-sub">approx. sones</div>
+ </div>
+
+ <div class="metric">
+ <div class="metric-label">Ref Crest Factor</div>
+ <div class="metric-value" id="region-ref-crest">–</div>
+ <div class="metric-sub">dB (peak − RMS)</div>
+ </div>
+ <div class="metric">
+ <div class="metric-label">Ref Peak Density</div>
+ <div class="metric-value" id="region-ref-peakdensity">–</div>
+ <div class="metric-sub">peaks / second</div>
+ </div>
+ <div class="metric">
+ <div class="metric-label">Ref Zwicker Loudness</div>
+ <div class="metric-value" id="region-ref-zwicker">–</div>
+ <div class="metric-sub">approx. sones</div>
+ </div>
+ </div>
+
+ <!--Zwicker + crest + peaks explanation-->
+ <details class="math-block math-bg-zwicker" close>
+ <summary>Zwicker Loudness, Crest Factor &amp; Peak Density</summary>
+
+ <p>Approximate Zwicker loudness in sones uses specific loudness over Bark bands:</p>
+ <p>\[
+ N = \int_0^{24} N'(z)\,dz
+ \approx
+ \sum_{b=1}^{B} N'(z_b)\,\Delta z,
+ \quad \Delta z \approx 1\ \text{Bark}.
+ \]</p>
+
+ <p>We approximate band levels \(L_b\) (dB) as phons at each Bark band and use:</p>
+ <p>\[
+ N'(z_b) \approx
+ \begin{cases}
+ \left(\dfrac{L_b}{40}\right)^{2.6}, & L_b < 40\ \mathrm{phon}\\[4pt]
+ 2^{\frac{L_b-40}{10}}, & L_b \ge 40\ \mathrm{phon}
+ \end{cases}
+ \]</p>
+ <p>so that a 40&nbsp;phon tone is ≈1&nbsp;sone when summed across bands.</p>
+
+ <p>For a time region \([t_0,t_1]\), band levels are averaged over frames:</p>
+ <p>\[
+ \bar L_b = \frac{1}{K}\sum_{k\in[t_0,t_1]} L_b(k),
+ \quad
+ N \approx \sum_b N'(\bar L_b).
+ \]</p>
+
+ <p>Crest factor (in dB) for a region is:</p>
+ <p>\[
+ C_\mathrm{dB} = 20\log_{10}\left(\frac{x_\mathrm{peak}}{x_\mathrm{rms}}\right),
+ \quad
+ x_\mathrm{rms} = \sqrt{\frac{1}{N}\sum_{n}x^2[n]}.
+ \]</p>
+
+ <p>Peak density (peaks / second) with threshold \(T\) (e.g. −18 dBFS) is:</p>
+ <p>\[
+ \rho_\mathrm{peaks}
+ = \frac{N_\mathrm{peaks}}{T_\mathrm{region}},
+ \quad
+ T_\mathrm{region} = t_1 - t_0,
+ \]</p>
+ <p>where \(N_\mathrm{peaks}\) counts local maxima whose amplitude exceeds \(T\).</p>
+ </details>
+
+ <!-- Streming penalties table -->
+ <div class="section-title">Streaming Loudness Penalties (approx.)</div>
+ <p class="tag">
+ Positive penalty ≈ how much the service turns you down (dB). Targets are indicative.
+ </p>
+ <table>
+ <thead>
+ <tr>
+ <th>Platform</th>
+ <th>Target LUFS</th>
+ <th>Penalty (dB)</th>
+ </tr>
+ </thead>
+ <tbody>
+ <tr>
+ <td>Spotify (normal)</td>
+ <td>-14</td>
+ <td id="penalty-spotify">–</td>
+ </tr>
+ <tr>
+ <td>YouTube</td>
+ <td>-14</td>
+ <td id="penalty-youtube">–</td>
+ </tr>
+ <tr>
+ <td>Apple Music</td>
+ <td>-16</td>
+ <td id="penalty-apple">–</td>
+ </tr>
+ <tr>
+ <td>Tidal / Amazon</td>
+ <td>-14</td>
+ <td id="penalty-tidal">–</td>
+ </tr>
+ </tbody>
+ </table>
+
+ <!-- realtime meters + 3-band EQ -->
+ <div class="section-title">Realtime Meters</div>
+ <div class="meters">
+ <div class="meter-block">
+ <div class="meter-line">
+ <span>dBFS Peak</span>
+ <span id="meter-peak">– dB</span>
+ </div>
+ <div class="bar-bg">
+ <div class="bar-fill" id="bar-peak"></div>
+ </div>
+
+ <div class="meter-line" style="margin-top:6px;">
+ <span>VU (0 VU ≈ -18 dBFS)</span>
+ <span id="meter-vu">– VU</span>
+ </div>
+ <div class="bar-bg">
+ <div class="bar-fill" id="bar-vu"></div>
+ </div>
+ </div>
+
+ <div class="meter-block">
+ <div class="meter-line">
+ <span>3-band EQ</span>
+ <span class="tag">Affects playback only</span>
+ </div>
+
+ <div style="margin-top:4px;">
+ <div style="font-size:0.8rem; margin-bottom:4px;">
+ Low Shelf (~150 Hz): <span id="eq-low-label">0.0 dB</span>
+ </div>
+ <input id="eq-low" type="range" min="-12" max="12" step="0.5" value="0">
+
+ <div style="font-size:0.8rem; margin:8px 0 4px;">
+ Mid Peaking (~1 kHz): <span id="eq-mid-label">0.0 dB</span>
+ </div>
+ <input id="eq-mid" type="range" min="-12" max="12" step="0.5" value="0">
+
+ <div style="font-size:0.8rem; margin:8px 0 4px;">
+ High Shelf (~6 kHz): <span id="eq-high-label">0.0 dB</span>
+ </div>
+ <input id="eq-high" type="range" min="-12" max="12" step="0.5" value="0">
+ </div>
+ </div>
+ </div>
+
+ <!-- Mp1 Masking for main track -->
+ <div class="section-title">Persistent Masking Map (MPEG-1 Model 1) — Main</div>
+ <details class="math-block math-bg-mp3" close>
+ <summary>MPEG-1 Model 1 (Masking)</summary>
+
+ <!-- explanations -->
+
+ <p>FFT and power spectrum:</p>
+ <p>\[
+ X(k) = \mathrm{FFT}\{x[n]\},\qquad
+ P(k) = |X(k)|^2
+ \]</p>
+
+ <p>Bark mapping:</p>
+ <p>\[
+ z(f) =
+ 13\arctan(0.00076 f) +
+ 3.5\arctan\!\left(\left(\frac{f}{7500}\right)^2\right)
+ \]</p>
+
+ <p>Tonal maskers:</p>
+ <p>\[
+ P_{\mathrm{tonal}}(k_m)
+ = P(k_m-1) + P(k_m) + P(k_m+1)
+ \]</p>
+
+ <p>Noise maskers per Bark band \(b\):</p>
+ <p>\[
+ P_{\mathrm{noise}}(b)
+ = \sum_{k \in b}' P(k)
+ \]</p>
+
+ <p>Spreading function:</p>
+ <p>\[
+ \mathrm{SF}(\Delta z) =
+ 15.81 + 7.5(\Delta z + 0.474)
+ - 17.5 \sqrt{1 + (\Delta z + 0.474)^2}
+ \]</p>
+
+ <p>Individual masking thresholds (\(L_m\) in dB SPL):</p>
+ <p>\[
+ LT_i(z) = L_m + \mathrm{SF}(z - z_m) - \mathrm{NMT/TMN}
+ \]</p>
+ <p>\[
+ \mathrm{TMN} = 14.5\ \mathrm{dB}\quad
+ \text{(tonal)},\qquad
+ \mathrm{NMT} \approx 3\text{–}5\ \mathrm{dB}\quad
+ \text{(noise)}
+ \]</p>
+
+ <p>Global masking threshold:</p>
+ <p>\[
+ LT_{\mathrm{global}}(z)
+ =
+ 10\log_{10}\!\left(
+ 10^{ATH(z)/10}
+ +
+ \sum_{i\in\mathrm{tonal}} 10^{LT_i(z)/10}
+ +
+ \sum_{i\in\mathrm{noise}} 10^{LT_i(z)/10}
+ \right)
+ \]</p>
+
+ <p>Masking margin per bin:</p>
+ <p>\[
+ \Delta(k) =
+ 10\log_{10} P(k) - LT_{\mathrm{global}}(z(k))
+ \]</p>
+ </details>
+
+ <!-- Persistent masking explanation -->
+ <details class="math-block math-bg-masking" close>
+ <summary>Persistent Masking (Occupancy)</summary>
+
+ <p>Band-time margin and binary mask:</p>
+ <p>\[
+ \Delta(b,t)
+ = 10\log_{10} P(b,t) - LT_{\mathrm{global}}(b,t)
+ \]</p>
+ <p>\[
+ M(b,t) =
+ \begin{cases}
+ 1, & \Delta(b,t) < 0 \\
+ 0, & \Delta(b,t) \ge 0
+ \end{cases}
+ \]</p>
+
+ <p>Sliding-window occupancy over \(W\) frames:</p>
+ <p>\[
+ R(b,t)
+ = \frac{1}{W}
+ \sum_{k = t - W/2}^{t + W/2}
+ M(b,k)
+ \]</p>
+
+ <p>Persistent mask (occupancy ≥ \(\alpha\)):</p>
+ <p>\[
+ M_{\mathrm{persist}}(b,t) =
+ \begin{cases}
+ 1, & R(b,t) \ge \alpha \\
+ 0, & R(b,t) < \alpha
+ \end{cases}
+ \]</p>
+
+ <p>Energy gate (e.g. \(L_{\min} = -60\ \mathrm{dBFS}\)):</p>
+ <p>\[
+ A(b,t) =
+ \begin{cases}
+ 1, & L(b,t) > L_{\min} \\
+ 0, & \text{otherwise}
+ \end{cases}
+ \]</p>
+
+ <p>Final persistent mask:</p>
+ <p>\[
+ M_{\mathrm{persist}}(b,t)
+ \leftarrow
+ M_{\mathrm{persist}}(b,t)\,A(b,t)
+ \]</p>
+ </details>
+
+ <!--controls for persistent mask params -->
+ <div class="controls-row">
+ <span class="tag">Persistent masking parameters (both tracks):</span>
+ <input id="alpha-input" class="alpha-range" type="range" min="0.3" max="0.95" step="0.05" value="0.6">
+ <span id="alpha-label" class="tag">α = 0.60</span>
+ <input id="window-input" class="small-num" type="number" min="3" max="61" step="2" value="9">
+ <span class="tag">
+ W frames (odd). Recommended analyzer defaults: α≈0.6, W≈9.
+ Note: ISO/ITU standards don’t define α or W; this is an analyzer extension.
+ </span>
+ </div>
+
+ <!--note for masking implementation -->
+ <p class="tag">
+ 512-pt FFT, ~12 ms frames, 1/16 overlap, Bark-domain tonal &amp; noise maskers + spreading + global threshold.
+ Only persistent masked regions (per-band occupancy ≥ α) with energy above -60 dB are highlighted.
+ </p>
+
+ <!--heatmaps for masking-->
+ <canvas id="mp3-masking-heatmap"></canvas>
+ <div class="heatmap-caption" id="mp3-masking-summary">No masking analysis yet.</div>
+
+ <div class="section-title">Persistent Masking Map — Reference Track</div>
+ <canvas id="mp3-masking-heatmap-ref"></canvas>
+ <div class="heatmap-caption" id="mp3-masking-summary-ref">No masking analysis for ref yet.</div>
+
+ <div class="section-title">Masking Margin Map Δ(b,t) — Main</div>
+ <p class="tag">
+ Same Bark × time grid, color encodes masking margin Δ(b,t) = L(b,t) − LT<sub>global</sub>(b,t).
+ More negative → brighter red. Δ ≥ 0 → very dark. Values are clipped at −20 dB so the map stays readable.
+ </p>
+ <canvas id="mp3-margin-heatmap"></canvas>
+ <div class="heatmap-caption" id="mp3-margin-summary">No margin analysis yet.</div>
+
+ <div class="section-title">Masking Margin Map Δ(b,t) — Reference Track</div>
+ <canvas id="mp3-margin-heatmap-ref"></canvas>
+ <div class="heatmap-caption" id="mp3-margin-summary-ref">No margin analysis for ref yet.</div>
+
+ <!--Debug output-->
+ <pre id="output" style="margin-top:10px; font-size:0.8rem;"></pre>
+
+ <!-- footnotes and references -->
+ <p class="footer-note">
+ Loudness calculation (K-weighting + BS.1770-5 gating) and
+ MPEG-1 Model 1 psychoacoustic masking is implemented for offline analysis; persistent masking and margin
+ are visualized in Bark–time space. α and W are analyzer parameters, not part of the ISO/ITU core spec.
+ </p>
+ <p class="footer-note">
+ Painter, Ted, and Andreas Spanias. "Perceptual coding of digital audio." Proceedings of the IEEE 88.4 (2002): 451-515.
+ </p>
+ <p class="footer-note">
+ International Telecommunication Union (ITU), “Recommendation itu-r bs.1770-5: Algorithms
+ to measure audio programme loudness and true-peak audio level,” International
+ Telecommunication Union, Geneva, Tech. Rep., Nov. 2023.
+ </p>
+ <p class="footer-note">
+ Moore, Brian CJ, and Brian R. Glasberg. "A revision of Zwicker's loudness model." Acta Acustica united with Acustica 82.2 (1996): 335-345.
+ </p>
+
+ </div>
+
+ <!-- little XP-style status bar -->
+ <div class="status-bar">
+ <p class="status-bar-field" id="status">No file loaded.</p>
+ <p class="status-bar-field">Sample rate: <span id="rates">–</span></p>
+ </div>
+ </div>
+ </div>
+
+ <!--MathJax script for latex rendering -->
+ <script defer
+ src="https://cdn.jsdelivr.net/npm/mathjax@3/es5/tex-mml-chtml.js">
+ </script>
+<script>
+//DOM REFERENCES
+
+//Main inputs, reference inputs, and analyze button and status field
+const fileElement  = document.getElementById('file');//input for main audio
+const fileRefElement = document.getElementById('file-ref');//input for reference audio
+const btnAnalyze = document.getElementById('analyze');// "Analyze" button
+const statusElement = document.getElementById('status');// Status bar text
+const outElement = document.getElementById('output');// Debug output
+const rateElement  = document.getElementById('rates');// Sample rate display
+
+// Main loudness panel elements
+const metricIntegrated = document.getElementById('metric-integrated');// Integrated LUFS (main)
+const metricLRA = document.getElementById('metric-lra');// Loudness range (main)
+const metricMin = document.getElementById('metric-min');// Min local LUFS
+const metricMax = document.getElementById('metric-max');// Max local LUFS
+const metricBlocks  = document.getElementById('metric-blocks');// Gated blocks count
+
+// Reference loudness panel elements, same elements as above, but only for the reference track 
+const metricIntegratedRef = document.getElementById('metric-integrated-ref');
+const metricLRARef = document.getElementById('metric-lra-ref');
+const metricMinRef = document.getElementById('metric-min-ref');
+const metricMaxRef = document.getElementById('metric-max-ref');
+const metricBlocksRef  = document.getElementById('metric-blocks-ref');
+
+//streaming penalties for the most used four streaming platforms 
+const penaltySpotify = document.getElementById('penalty-spotify');
+const penaltyYouTube = document.getElementById('penalty-youtube');
+const penaltyApple  = document.getElementById('penalty-apple');
+const penaltyTidal  = document.getElementById('penalty-tidal');
+
+// Playback controls and penalty selector
+const playOriginalBtn = document.getElementById('play-original');//play original
+const playNormBtn = document.getElementById('play-normalized');//play normalized
+const stopPlaybackBtn = document.getElementById('stop-playback');//stop playback
+const platformSelect  = document.getElementById('platform-select');//penalty target selection
+
+//realtime meters, all real-time
+const meterPeakText = document.getElementById('meter-peak');  
+const meterVuText  = document.getElementById('meter-vu');  
+const barPeak  = document.getElementById('bar-peak');  
+const barVu  = document.getElementById('bar-vu');  
+
+//eq sliders, all realtime 
+const eqLowSlider = document.getElementById('eq-low');//shelf
+const eqMidSlider = document.getElementById('eq-mid');//peaking
+const eqHighSlider = document.getElementById('eq-high');//shelf
+const eqLowLabel  = document.getElementById('eq-low-label'); 
+const eqMidLabel  = document.getElementById('eq-mid-label'); 
+const eqHighLabel = document.getElementById('eq-high-label');
+
+// Playback bar
+const seekBar  = document.getElementById('seek-bar');//range input for the bar
+const seekLabel = document.getElementById('seek-label');//time display 
+
+//
+const loudnessCanvas = document.getElementById('loudness-curve');
+const loudnessCtx = loudnessCanvas.getContext('2d');
+
+//region analysis elements for main and ref, real-time
+const regionMainCrestEl  = document.getElementById('region-main-crest');
+const regionMainPeakEl = document.getElementById('region-main-peakdensity');
+const regionMainZwickerEl = document.getElementById('region-main-zwicker');
+const regionRefCrestEl = document.getElementById('region-ref-crest');
+const regionRefPeakEl  = document.getElementById('region-ref-peakdensity');
+const regionRefZwickerEl = document.getElementById('region-ref-zwicker');
+
+//heatmap canvases binary plus printouts
+const mp3Canvas  = document.getElementById('mp3-masking-heatmap');
+const mp3Ctx = mp3Canvas.getContext('2d');
+const mp3SummaryEl = document.getElementById('mp3-masking-summary');
+
+const mp3CanvasRef = document.getElementById('mp3-masking-heatmap-ref');
+const mp3CtxRef  = mp3CanvasRef.getContext('2d');
+const mp3SummaryRefEl = document.getElementById('mp3-masking-summary-ref');
+
+//heatmap canvases smoothed plus printouts
+const mp3MarginCanvas = document.getElementById('mp3-margin-heatmap');
+const mp3MarginCtx = mp3MarginCanvas.getContext('2d');
+const mp3MarginSummaryEl = document.getElementById('mp3-margin-summary');
+
+const mp3MarginCanvasRef = document.getElementById('mp3-margin-heatmap-ref');
+const mp3MarginCtxRef = mp3MarginCanvasRef.getContext('2d');
+const mp3MarginSummaryRefEl = document.getElementById('mp3-margin-summary-ref');
+
+// Persistent masking parameters UI
+const alphaInput = document.getElementById('alpha-input');  // α (occupancy threshold) slider
+const alphaLabel = document.getElementById('alpha-label');  // Text "α = 0.xx"
+const windowInput = document.getElementById('window-input'); // W (window length in frames)
+
+
+// AUDIO / ANALYSIS STATE =============================================================================
+
+let audioCtx  = null; //AudioContext
+let decodedBuffer = null; //Main track decoded buffer
+let filteredBuffer = null; //Main track K-weighted offline buffer
+
+let decodedBufferRef = null; // Reference track decoded buffer
+let filteredBufferRef = null; // Reference track K-weighted buffer
+
+let currentSource = null; // Currently playing AudioBufferSourceNode
+let meterAnalyser = null; // AnalyserNode for realtime meters
+let meterTimeData = null; // Float32Array for analyser time-domain data
+let meterRafId  = null; // requestAnimationFrame ID for meter loop
+
+// EQ BiquadFilterNodes and their gain settings in dB
+let eqNodes = { low: null, mid: null, high: null };
+let eqSettings = { low: 0.0, mid: 0.0, high: 0.0 };
+
+// Cached loudness results for main + ref
+let lastAnalysis = null;
+let lastAnalysisRef = null;
+
+// Cached MPEG masking results for main + ref
+let mp3LastRes = null;
+let mp3LastResRef = null;
+
+// Track durations (in seconds)
+let trackDurationSec = 0; // main
+let trackDurationRefSec = 0; // ref
+
+// Playback timing state
+let playbackOffsetSec = 0; // Where playback started in seconds
+let playbackStartTime = 0; // AudioContext time when started
+let lastPlaybackNormalized = false; // Remember whether last playback was normalized
+
+// Loudness curve & selected region state
+let loudnessCurve = null;  // { times, values, minL, maxL } for main
+let loudnessCurveRef = null; // same for reference
+let regionSel = { startSec: 0, endSec: 0 }; // Analysis region in seconds
+let playheadSec = 0; // Current playhead time in seconds
+
+// 48 kHz K-weighting IIR coefficients (for offline filtering)
+// Numerator / denominator arrays for two cascaded filters
+const K_PREFILTER1_FF = [ 1.53512485958697, -2.69169618940638, 1.19839281085285 ];
+const K_PREFILTER1_FB = [ 1.0,  -1.69065929318241, 0.73248077421585 ];
+const K_PREFILTER2_FF = [ 1.0, -2.0, 1.0 ];
+const K_PREFILTER2_FB = [ 1.0, -1.99004745483398, 0.99007225036621 ];
+
+
+// SMALL HELPER FUNCTIONS =================================================================================================
+
+
+/**
+ * Format seconds as "mm:ss".
+ * @param {number} sec - time in seconds
+ * @returns {string} formatted time
+ */
+function formatTime(sec) {
+ if (!isFinite(sec) || sec < 0) sec = 0;
+ const m = Math.floor(sec / 60);
+ const s = Math.floor(sec % 60);
+ return `${String(m).padStart(2,'0')}:${String(s).padStart(2,'0')}`;
+}
+
+/**
+ * Update the seek label with current and total duration.
+ * @param {number} currentSec
+ */
+function updateSeekLabel(currentSec) {
+ seekLabel.textContent = `${formatTime(currentSec)} / ${formatTime(trackDurationSec || 0)}`;
+}
+
+/**
+ * Clamp a value between lo and hi.
+ */
+function clamp(v, lo, hi) {
+ return Math.max(lo, Math.min(hi, v));
+}
+
+
+// FILE SELECTION and ANALYZE BUTTON =============================================================
+
+
+/**
+ * Enable/disable Analyze button depending on whether main file is selected.
+ * Also updates status.
+ */
+function updateAnalyzeButton() {
+ btnAnalyze.disabled = !fileElement.files.length;
+ statusElement.textContent = fileElement.files.length ? "File ready." : "No file loaded.";
+}
+
+// Listen for file selection changes
+fileElement.addEventListener('change', updateAnalyzeButton);
+
+// Ref file change is tracked, but does not gate the Analyze button
+fileRefElement.addEventListener('change', () => {
+ // nothing special needed; reference is optional
+});
+
+// ============================
+// MAIN ANALYZE PIPELINE
+// ============================
+
+btnAnalyze.addEventListener('click', async () => {
+ const file = fileElement.files[0]; // main audio file object
+ if (!file) return;
+
+ const refFile = fileRefElement.files[0] || null; // optional ref
+
+ // Ensure AudioContext exists and is open
+ if (!audioCtx || audioCtx.state === 'closed') {
+ audioCtx = new (window.AudioContext || window.webkitAudioContext)();
+ }
+
+ // Stop any playing audio before analyzing
+ stopPlayback();
+
+ // Reset UI / metrics / summaries
+ statusElement.textContent = "Decoding compressed audio...";
+ outElement.textContent = "";
+ metricIntegrated.textContent = "–";
+ metricLRA.textContent = "–";
+ metricMin.textContent = "–";
+ metricMax.textContent = "–";
+ metricBlocks.textContent = "–";
+
+ metricIntegratedRef.textContent = "–";
+ metricLRARef.textContent = "–";
+ metricMinRef.textContent = "–";
+ metricMaxRef.textContent = "–";
+ metricBlocksRef.textContent  = "–";
+
+ clearPenalties();
+
+ mp3SummaryEl.textContent = "No masking analysis yet.";
+ mp3MarginSummaryEl.textContent = "No margin analysis yet.";
+ mp3SummaryRefEl.textContent = "No masking analysis for ref yet.";
+ mp3MarginSummaryRefEl.textContent = "No margin analysis for ref yet.";
+
+ clearMp3Heatmap(mp3Canvas, mp3Ctx);
+ clearMp3MarginHeatmap(mp3MarginCanvas, mp3MarginCtx);
+ clearMp3Heatmap(mp3CanvasRef, mp3CtxRef);
+ clearMp3MarginHeatmap(mp3MarginCanvasRef, mp3MarginCtxRef);
+
+ // Clear prior buffers / results
+ decodedBuffer  = null;
+ filteredBuffer = null;
+ decodedBufferRef = null;
+ filteredBufferRef = null;
+ lastAnalysis = null;
+ lastAnalysisRef  = null;
+ mp3LastRes = null;
+ mp3LastResRef  = null;
+ loudnessCurve  = null;
+ loudnessCurveRef = null;
+
+ // ------------------ MAIN TRACK ------------------
+
+ // Read file into ArrayBuffer
+ const arrayBuffer = await file.arrayBuffer();
+
+ // Web Audio API decode (async)
+ decodedBuffer = await audioCtx.decodeAudioData(arrayBuffer);
+
+ // Cache duration and configure seek bar
+ trackDurationSec = decodedBuffer.duration;
+ seekBar.min = 0;
+ seekBar.max = trackDurationSec.toFixed(2);
+ seekBar.value = 0;
+ updateSeekLabel(0);
+ playheadSec = 0;
+
+ // Display original sample rate
+ rateElement.textContent = `Original sample rate: ${decodedBuffer.sampleRate} Hz`;
+
+ // Offline K-weighting
+ statusElement.textContent = "Applying K-weighting filters (offline, main)...";
+ filteredBuffer = await kWeightOffline(decodedBuffer);
+ rateElement.textContent += ` | Resampled for analysis: ${filteredBuffer.sampleRate} Hz`;
+
+ // Loudness analysis
+ statusElement.textContent = "Analyzing loudness (main)...";
+ const result = analyzeLoudness(filteredBuffer);
+ lastAnalysis = result;
+
+ // Integrated LUFS text
+ if (!isFinite(result.integratedLUFS)) {
+ metricIntegrated.textContent = "-∞";
+ } else {
+ metricIntegrated.textContent = `${result.integratedLUFS.toFixed(2)} LUFS`;
+ }
+
+ // LRA text
+ if (!isFinite(result.lra)) {
+ metricLRA.textContent = "–";
+ } else {
+ metricLRA.textContent = `${result.lra.toFixed(1)} LU`;
+ }
+
+ // Min/max local LUFS text
+ if (result.minLocalLUFS === null || !isFinite(result.minLocalLUFS)) {
+ metricMin.textContent = "–";
+ metricMax.textContent = "–";
+ } else {
+ metricMin.textContent = `${result.minLocalLUFS.toFixed(2)} LUFS`;
+ metricMax.textContent = `${result.maxLocalLUFS.toFixed(2)} LUFS`;
+ }
+
+ // Blocks kept vs total
+ metricBlocks.textContent = `${result.keptBlocks}/${result.totalBlocks}`;
+
+ // Debug text summary for main
+ outElement.textContent =
+ `MAIN:\n` +
+ `Integrated: ${isFinite(result.integratedLUFS) ? result.integratedLUFS.toFixed(3) : "-Infinity"} LUFS\n` +
+ `Blocks kept: ${result.keptBlocks}/${result.totalBlocks}\n` +
+ `LRA: ${isFinite(result.lra) ? result.lra.toFixed(1) : "NaN"} LU\n` +
+ `Min local LKFS: ${result.minLocalLUFS !== null && isFinite(result.minLocalLUFS) ? result.minLocalLUFS.toFixed(3) : "NaN"}\n` +
+ `Max local LKFS: ${result.maxLocalLUFS !== null && isFinite(result.maxLocalLUFS) ? result.maxLocalLUFS.toFixed(3) : "NaN"}\n`;
+
+ // Update streaming penalty table based on integrated LUFS
+ updatePenalties(result.integratedLUFS);
+
+ // Build main loudness curve (time series of local blocks)
+ if (result.blocksTimes && result.blocksLUFS && result.blocksTimes.length) {
+ const vals = result.blocksLUFS.filter(v => isFinite(v));
+ const minL = vals.length ? Math.min(...vals) : -70;
+ const maxL = vals.length ? Math.max(...vals) : -10;
+ loudnessCurve = {
+ times: result.blocksTimes.slice(), // center times per block
+ values: result.blocksLUFS.slice(), // local LUFS per block
+ minL,
+ maxL
+ };
+ // Default region is full track
+ regionSel.startSec = 0;
+ regionSel.endSec  = trackDurationSec;
+ drawLoudnessCurve();
+ updateRegionAnalysis(); // initial region metrics
+ }
+
+ // MPEG-1 masking base computation for main
+ statusElement.textContent = "Running MPEG-1 Model-1 masking analysis (main)...";
+ mp3LastRes = computeMp3Masking(decodedBuffer);
+
+ // Build persistent mask using current α/W
+ recomputePersistentFromUI();
+
+ // Draw margin heatmap (Δ(b,t)) for main
+ drawMp3MarginHeatmap(mp3LastRes, mp3MarginCanvas, mp3MarginCtx);
+ mp3MarginSummaryEl.textContent =
+ `Margin Δ(b,t) in dB, clipped to [−20, 0]. More negative = stronger red; Δ≥0 = dark (main).`;
+
+ // ------------------ REFERENCE TRACK ------------------
+ if (refFile) {
+ statusElement.textContent = "Decoding reference track...";
+ const refArrayBuffer = await refFile.arrayBuffer();
+ decodedBufferRef = await audioCtx.decodeAudioData(refArrayBuffer);
+ trackDurationRefSec = decodedBufferRef.duration;
+
+ statusElement.textContent = "Applying K-weighting filters (offline, ref)...";
+ filteredBufferRef = await kWeightOffline(decodedBufferRef);
+
+ statusElement.textContent = "Analyzing loudness (ref)...";
+ const resultRef = analyzeLoudness(filteredBufferRef);
+ lastAnalysisRef = resultRef;
+
+ // Integrated LUFS for ref
+ if (!isFinite(resultRef.integratedLUFS)) {
+ metricIntegratedRef.textContent = "-∞";
+ } else {
+ metricIntegratedRef.textContent = `${resultRef.integratedLUFS.toFixed(2)} LUFS`;
+ }
+
+ // LRA for ref
+ if (!isFinite(resultRef.lra)) {
+ metricLRARef.textContent = "–";
+ } else {
+ metricLRARef.textContent = `${resultRef.lra.toFixed(1)} LU`;
+ }
+
+ // Min/max local LUFS ref
+ if (resultRef.minLocalLUFS === null || !isFinite(resultRef.minLocalLUFS)) {
+ metricMinRef.textContent = "–";
+ metricMaxRef.textContent = "–";
+ } else {
+ metricMinRef.textContent = `${resultRef.minLocalLUFS.toFixed(2)} LUFS`;
+ metricMaxRef.textContent = `${resultRef.maxLocalLUFS.toFixed(2)} LUFS`;
+ }
+
+ metricBlocksRef.textContent = `${resultRef.keptBlocks}/${resultRef.totalBlocks}`;
+
+ // Build ref loudness curve (for overlay)
+ if (resultRef.blocksTimes && resultRef.blocksLUFS && resultRef.blocksTimes.length) {
+ const valsRef = resultRef.blocksLUFS.filter(v => isFinite(v));
+ const minLRef = valsRef.length ? Math.min(...valsRef) : -70;
+ const maxLRef = valsRef.length ? Math.max(...valsRef) : -10;
+
+ loudnessCurveRef = {
+ times: resultRef.blocksTimes.slice(),
+ values: resultRef.blocksLUFS.slice(),
+ minL: minLRef,
+ maxL: maxLRef
+ };
+
+ // redraw with both curves showing
+ drawLoudnessCurve();
+ }
+
+ // Append ref info to debug output
+ outElement.textContent +=
+ `\nREF:\n` +
+ `Integrated: ${isFinite(resultRef.integratedLUFS) ? resultRef.integratedLUFS.toFixed(3) : "-Infinity"} LUFS\n` +
+ `Blocks kept: ${resultRef.keptBlocks}/${resultRef.totalBlocks}\n` +
+ `LRA: ${isFinite(resultRef.lra) ? resultRef.lra.toFixed(1) : "NaN"} LU\n` +
+ `Min local LKFS: ${resultRef.minLocalLUFS !== null && isFinite(resultRef.minLocalLUFS) ? resultRef.minLocalLUFS.toFixed(3) : "NaN"}\n` +
+ `Max local LKFS: ${resultRef.maxLocalLUFS !== null && isFinite(resultRef.maxLocalLUFS) ? resultRef.maxLocalLUFS.toFixed(3) : "NaN"}\n`;
+
+ // MPEG-1 masking for ref
+ statusElement.textContent = "Running MPEG-1 Model-1 masking analysis (ref)...";
+ mp3LastResRef = computeMp3Masking(decodedBufferRef);
+
+ // Build persistent mask ref
+ recomputePersistentFromUI();
+
+ // Margin heatmap for ref
+ drawMp3MarginHeatmap(mp3LastResRef, mp3MarginCanvasRef, mp3MarginCtxRef);
+ mp3MarginSummaryRefEl.textContent =
+ `Margin Δ(b,t) in dB, clipped to [−20, 0]. More negative = stronger red; Δ≥0 = dark (ref).`;
+
+ // Region analysis for main+ref over same selected region
+ updateRegionAnalysis();
+ }
+
+ statusElement.textContent = "Analysis complete.";
+});
+
+
+// OFFLINE K-WEIGHTING FILTER ====================================================================================
+
+
+/**
+ * Apply K-weighting prefilters offline using OfflineAudioContext.
+ * Resamples to 48 kHz and runs two IIR filters in series.
+ * @param {AudioBuffer} buffer - original decoded audio
+ * @returns {Promise<AudioBuffer>} - filtered buffer
+ */
+async function kWeightOffline(buffer) {
+ const targetSR = 48000; // target sample rate for analysis
+ const length48 = Math.ceil(buffer.duration * targetSR); // approximate new length
+ const offline = new OfflineAudioContext(buffer.numberOfChannels, length48, targetSR);
+
+ const src = offline.createBufferSource();
+ src.buffer = buffer;
+
+ const pref1 = offline.createIIRFilter(K_PREFILTER1_FF, K_PREFILTER1_FB);
+ const pref2 = offline.createIIRFilter(K_PREFILTER2_FF, K_PREFILTER2_FB);
+
+ // src -> H1 -> H2 -> destination
+ src.connect(pref1).connect(pref2).connect(offline.destination);
+
+ src.start(0);
+ return offline.startRendering(); // renders entire buffer and resolves with new AudioBuffer
+}
+
+// ============================
+// LOUDNESS ANALYSIS (BS.1770)
+// ============================
+
+/**
+ * Analyze loudness on a K-weighted buffer with BS.1770 style gating.
+ * Returns integrated LUFS, LRA, min/max local, plus times of blocks.
+ *
+ * @param {AudioBuffer} buffer
+ * @param {number[]} [channelWeights=null] optional per-channel weights
+ */
+function analyzeLoudness(buffer, channelWeights = null) {
+ const sr = buffer.sampleRate;
+ const len = buffer.length;
+ const ch = buffer.numberOfChannels;
+
+ // Block / hop sizes: 400 ms blocks, 100 ms hop (BS.1770)
+ const blockSize = Math.round(sr * 0.400);
+ const hopSize  = Math.round(sr * 0.100);
+
+ // Channel weights Gi
+ const g = channelWeights && channelWeights.length === ch
+ ? channelWeights.slice()
+ : Array(ch).fill(1.0);
+
+ // Pre-fetch float channel arrays
+ const data = Array.from({length: ch}, (_, i) => buffer.getChannelData(i));
+
+ // Convert mean-square to LKFS (Eq: -0.691 + 10 log10( sum(G_i^2 z_i) ) )
+ const msToLUFS = (ms) => ms <= 0 ? -Infinity : -0.691 + 10 * Math.log10(ms);
+
+ // Simple mean helper
+ const mean = (arr) => arr.length ? arr.reduce((a,b)=>a+b,0) / arr.length : NaN;
+
+ // Percentile helper (0-100)
+ const percentile = (arr, p) => {
+ if (!arr.length) return NaN;
+ const a = arr.slice().sort((x,y)=>x-y);
+ const idx = (p/100) * (a.length - 1);
+ const lo = Math.floor(idx), hi = Math.ceil(idx);
+ return lo === hi ? a[lo] : a[lo] + (a[hi]-a[lo])*(idx-lo);
+ };
+
+ /**
+ * Compute block mean-square for one time interval across channels.
+ * @param {number} start - sample index
+ * @param {number} size - block size in samples
+ */
+ const blockMS = (start, size) => {
+ const end = Math.min(len, start + size);
+ let sum = 0;
+ for (let c = 0; c < ch; c++) {
+ if (g[c] === 0) continue;
+ const d = data[c];
+ let s = 0;
+ for (let i = start; i < end; i++) s += d[i] * d[i];
+ const ms_c = s / (end - start);
+ sum += (g[c] * g[c]) * ms_c;
+ }
+ return sum;
+ };
+
+ // Block scanning in time: store mean-square and LKFS per block
+ const blocksMS = [];
+ const blocksLUFS = [];
+ const blocksTimes = [];
+ for (let start = 0; start + blockSize <= len; start += hopSize) {
+ const ms = blockMS(start, blockSize);
+ blocksMS.push(ms);
+ const l = msToLUFS(ms);
+ blocksLUFS.push(l);
+ const center = start + blockSize * 0.5;
+ const timeSec = center / sr;
+ blocksTimes.push(timeSec);
+ }
+ const totalBlocks = blocksMS.length;
+
+ // Absolute gate: discard blocks below -70 LKFS
+ const absIdx = [];
+ for (let i = 0; i < totalBlocks; i++) if (blocksLUFS[i] > -70) absIdx.push(i);
+
+ // If no blocks above threshold, return -∞
+ if (!absIdx.length) {
+ return {
+ integratedLUFS: -Infinity,
+ keptBlocks: 0,
+ totalBlocks,
+ lra: NaN,
+ minLocalLUFS: null,
+ maxLocalLUFS: null,
+ blocksLUFS,
+ blocksTimes
+ };
+ }
+
+ // Preliminary loudness using only blocks above absolute gate
+ const prelimMS = mean(absIdx.map(i => blocksMS[i]));
+ const prelimLUFS = msToLUFS(prelimMS);
+
+ // Relative gate: 10 LU below preliminary
+ const rel10 = prelimLUFS - 10.0;
+ const keptIdx = [];
+ for (let k = 0; k < absIdx.length; k++) {
+ const i = absIdx[k];
+ if (blocksLUFS[i] >= rel10) keptIdx.push(i);
+ }
+
+ // If nothing passes relative gate, also -∞
+ if (!keptIdx.length) {
+ return {
+ integratedLUFS: -Infinity,
+ keptBlocks: 0,
+ totalBlocks,
+ lra: NaN,
+ minLocalLUFS: null,
+ maxLocalLUFS: null,
+ blocksLUFS,
+ blocksTimes
+ };
+ }
+
+ // Integrated loudness over kept blocks
+ const finalMS = mean(keptIdx.map(i => blocksMS[i]));
+ const integratedLUFS = msToLUFS(finalMS);
+
+ // LRA: 3s windows with 1s hop across entire piece (BS.1770 style)
+ const stSize = Math.round(sr * 3.0);
+ const stHop = Math.round(sr * 1.0);
+ const stVals = [];
+ for (let start = 0; start + stSize <= len; start += stHop) {
+ const ms = blockMS(start, stSize);
+ const l = msToLUFS(ms);
+ stVals.push(l);
+ }
+ // LRA gating: exclude values more than 20 LU below integrated
+ const lraGate = Math.max(-70, integratedLUFS - 20);
+ const stGated = stVals.filter(l => isFinite(l) && l >= lraGate);
+ const lra = stGated.length >= 10 ? (percentile(stGated, 95) - percentile(stGated, 10)) : NaN;
+
+ // Min/max local loudness among kept blocks
+ let minLocalLUFS = null;
+ let maxLocalLUFS = null;
+ if (keptIdx.length) {
+ const keptLUFS = keptIdx.map(i => blocksLUFS[i]).filter(v => isFinite(v));
+ if (keptLUFS.length) {
+ minLocalLUFS = Math.min(...keptLUFS);
+ maxLocalLUFS = Math.max(...keptLUFS);
+ }
+ }
+
+ return {
+ integratedLUFS,
+ keptBlocks: keptIdx.length,
+ totalBlocks,
+ lra,
+ minLocalLUFS,
+ maxLocalLUFS,
+ blocksLUFS,
+ blocksTimes
+ };
+}
+
+// ============================
+// STREAMING PENALTIES
+// ============================
+
+/**
+ * Reset penalty cells to "–".
+ */
+function clearPenalties() {
+ [penaltySpotify, penaltyYouTube, penaltyApple, penaltyTidal].forEach(el => {
+ el.textContent = "–";
+ el.className = "";
+ });
+}
+
+/**
+ * Fill one penalty cell and assign color class.
+ * @param {HTMLElement} cell
+ * @param {number} penaltyDb - dB offset vs target LUFS
+ */
+function setPenaltyCell(cell, penaltyDb) {
+ if (!isFinite(penaltyDb)) {
+ cell.textContent = "–";
+ cell.className = "";
+ return;
+ }
+ const rounded = penaltyDb.toFixed(1);
+ cell.textContent = `${rounded} dB`;
+ if (penaltyDb > 0.1) {
+ cell.className = "penalty-pos";  // will be turned down
+ } else if (penaltyDb < -0.1) {
+ cell.className = "penalty-neg";  // would be boosted
+ } else {
+ cell.className = "penalty-zero"; // approx. no change
+ }
+}
+
+/**
+ * Compute and update penalty cells given integrated LUFS.
+ */
+function updatePenalties(integratedLUFS) {
+ if (!isFinite(integratedLUFS)) {
+ clearPenalties();
+ return;
+ }
+
+ // Platform target loudness values (approximate)
+ const targets = {
+ spotify: -14,
+ youtube: -14,
+ apple:  -16,
+ tidal:  -14
+ };
+
+ const penaltySpotifyDb = integratedLUFS - targets.spotify;
+ const penaltyYouTubeDb = integratedLUFS - targets.youtube;
+ const penaltyAppleDb  = integratedLUFS - targets.apple;
+ const penaltyTidalDb  = integratedLUFS - targets.tidal;
+
+ setPenaltyCell(penaltySpotify, penaltySpotifyDb);
+ setPenaltyCell(penaltyYouTube, penaltyYouTubeDb);
+ setPenaltyCell(penaltyApple,  penaltyAppleDb);
+ setPenaltyCell(penaltyTidal,  penaltyTidalDb);
+}
+
+// ============================
+// PLAYBACK + REALTIME METERS
+// ============================
+
+/**
+ * Stop playback and reset meters.
+ */
+function stopPlayback() {
+ if (currentSource) {
+ try { currentSource.stop(); } catch (e) {}
+ currentSource.disconnect();
+ currentSource = null;
+ }
+ if (meterRafId !== null) {
+ cancelAnimationFrame(meterRafId);
+ meterRafId = null;
+ }
+ meterAnalyser = null;
+ meterPeakText.textContent = "– dB";
+ meterVuText.textContent = "– VU";
+ barPeak.style.width = "0%";
+ barVu.style.width = "0%";
+}
+
+/**
+ * Create three EQ filters (low shelf, peaking, high shelf).
+ * Gains are set from eqSettings.
+ */
+function createEQNodes(ctx) {
+ const low = ctx.createBiquadFilter();
+ low.type = "lowshelf";
+ low.frequency.value = 150;
+
+ const mid = ctx.createBiquadFilter();
+ mid.type = "peaking";
+ mid.frequency.value = 1000;
+ mid.Q.value = 1;
+
+ const high = ctx.createBiquadFilter();
+ high.type = "highshelf";
+ high.frequency.value = 6000;
+
+ low.gain.value = eqSettings.low;
+ mid.gain.value = eqSettings.mid;
+ high.gain.value = eqSettings.high;
+
+ eqNodes.low = low;
+ eqNodes.mid = mid;
+ eqNodes.high = high;
+}
+
+/**
+ * Start playback of main buffer, optionally loudness-normalized.
+ * @param {Object} opts
+ * @param {boolean} opts.normalized - whether to normalize to platform target
+ * @param {number} opts.offsetSec - where to start playback (seconds)
+ */
+function startPlayback({ normalized, offsetSec = 0 }) {
+ if (!audioCtx || !decodedBuffer || !lastAnalysis) {
+ statusElement.textContent = "Nothing to play yet. Analyze a file first.";
+ return;
+ }
+
+ if (audioCtx.state === "suspended") {
+ audioCtx.resume();
+ }
+
+ // Make sure any previous playback is stopped
+ stopPlayback();
+
+ const duration = decodedBuffer.duration;
+ const startOffset = Math.max(0, Math.min(duration, offsetSec));
+
+ // New buffer source
+ currentSource = audioCtx.createBufferSource();
+ currentSource.buffer = decodedBuffer;
+
+ // Determine platform loudness target based on dropdown
+ const platform = platformSelect.value;
+ const targetLUFS = ({
+ spotify: -14,
+ youtube: -14,
+ apple:  -16,
+ tidal:  -14
+ })[platform] ?? -14;
+
+ // Gain node for loudness normalization
+ const gainNode = audioCtx.createGain();
+ if (normalized && isFinite(lastAnalysis.integratedLUFS)) {
+ const diffDb = targetLUFS - lastAnalysis.integratedLUFS; // desired - current
+ const lin = Math.pow(10, diffDb / 20); // convert dB to linear
+ gainNode.gain.value = lin;
+ statusElement.textContent = `Playing normalized to ${targetLUFS} LUFS for ${platformSelect.options[platformSelect.selectedIndex].text}.`;
+ } else {
+ gainNode.gain.value = 1.0;
+ statusElement.textContent = "Playing original (no loudness normalization in the chain).";
+ }
+
+ // Analyser node for peak/VU meters
+ meterAnalyser = audioCtx.createAnalyser();
+ meterAnalyser.fftSize = 2048;
+ meterAnalyser.smoothingTimeConstant = 0.8;
+ meterTimeData = new Float32Array(meterAnalyser.fftSize);
+
+ // Create EQ filters
+ createEQNodes(audioCtx);
+
+ // Connect graph: source -> low -> mid -> high -> gain -> analyser -> destination
+ currentSource
+ .connect(eqNodes.low)
+ .connect(eqNodes.mid)
+ .connect(eqNodes.high)
+ .connect(gainNode)
+ .connect(meterAnalyser)
+ .connect(audioCtx.destination);
+
+ // Initialize playhead tracking
+ playbackOffsetSec = startOffset;
+ playbackStartTime = audioCtx.currentTime;
+ seekBar.value = startOffset;
+ updateSeekLabel(startOffset);
+ playheadSec = startOffset;
+ drawLoudnessCurve();
+
+ // When playback ends, reset state
+ currentSource.onended = () => {
+ stopPlayback();
+ statusElement.textContent = "Playback finished.";
+ };
+
+ // Start playback from offsetSec
+ currentSource.start(0, startOffset);
+ startMeterLoop();
+}
+
+/**
+ * Meter update loop with requestAnimationFrame.
+ * Computes peak, RMS and VU from analyser time-domain data.
+ */
+function startMeterLoop() {
+ function loop() {
+ if (!meterAnalyser) {
+ meterRafId = null;
+ return;
+ }
+
+ // Read current time-domain signal
+ meterAnalyser.getFloatTimeDomainData(meterTimeData);
+
+ let maxAbs = 0;
+ let sumSq = 0;
+ for (let i = 0; i < meterTimeData.length; i++) {
+ const v = meterTimeData[i];
+ const av = Math.abs(v);
+ if (av > maxAbs) maxAbs = av;
+ sumSq += v * v;
+ }
+
+ const rms = Math.sqrt(sumSq / meterTimeData.length) || 1e-12;
+ const dBPeak = 20 * Math.log10(maxAbs || 1e-12);
+ const dBRms = 20 * Math.log10(rms);
+
+ const vu = dBRms + 18; // 0 VU corresponds to -18 dBFS
+
+ meterPeakText.textContent = `${dBPeak.toFixed(1)} dB`;
+ meterVuText.textContent  = `${vu.toFixed(1)} VU`;
+
+ // Normalize bars to fixed dB ranges
+ const peakNorm = Math.max(0, Math.min(1, (dBPeak + 60) / 60)); // -60..0 dB → 0..1
+ const vuNorm  = Math.max(0, Math.min(1, (vu + 20) / 20));  // -20..0 VU → 0..1
+ barPeak.style.width = `${peakNorm * 100}%`;
+ barVu.style.width  = `${vuNorm * 100}%`;
+
+ // Update seek bar and playhead
+ if (currentSource && audioCtx) {
+ const tNow = audioCtx.currentTime;
+ const pos = Math.min(trackDurationSec, playbackOffsetSec + (tNow - playbackStartTime));
+ seekBar.value = pos;
+ updateSeekLabel(pos);
+ playheadSec = pos;
+ drawLoudnessCurve();
+ }
+
+ meterRafId = requestAnimationFrame(loop);
+ }
+ meterRafId = requestAnimationFrame(loop);
+}
+
+// ============================
+// EQ CONTROLS UI
+// ============================
+
+/**
+ * Update the text labels under the EQ sliders to show dB values.
+ */
+function updateEqLabel() {
+ eqLowLabel.textContent = `${eqSettings.low.toFixed(1)} dB`;
+ eqMidLabel.textContent = `${eqSettings.mid.toFixed(1)} dB`;
+ eqHighLabel.textContent = `${eqSettings.high.toFixed(1)} dB`;
+}
+
+// Low shelf slider event: update setting and filter gain
+eqLowSlider.addEventListener('input', () => {
+ eqSettings.low = parseFloat(eqLowSlider.value);
+ if (eqNodes.low) eqNodes.low.gain.value = eqSettings.low;
+ updateEqLabel();
+});
+
+// Mid peaking slider
+eqMidSlider.addEventListener('input', () => {
+ eqSettings.mid = parseFloat(eqMidSlider.value);
+ if (eqNodes.mid) eqNodes.mid.gain.value = eqSettings.mid;
+ updateEqLabel();
+});
+
+// High shelf slider
+eqHighSlider.addEventListener('input', () => {
+ eqSettings.high = parseFloat(eqHighSlider.value);
+ if (eqNodes.high) eqNodes.high.gain.value = eqSettings.high;
+ updateEqLabel();
+});
+
+// Initialize labels to 0.0 dB
+updateEqLabel();
+
+// ============================
+// PLAYBACK BAR HANDLING
+// ============================
+
+// While user drags the seek bar, just update label + playhead
+seekBar.addEventListener('input', () => {
+ const val = parseFloat(seekBar.value) || 0;
+ updateSeekLabel(val);
+ playheadSec = val;
+ drawLoudnessCurve();
+});
+
+// When user releases / changes, restart playback at new offset
+seekBar.addEventListener('change', () => {
+ const val = parseFloat(seekBar.value) || 0;
+ if (!audioCtx || !decodedBuffer) return;
+ startPlayback({ normalized: lastPlaybackNormalized, offsetSec: val });
+});
+
+// ============================
+// FFT + BARK + ATH HELPERS
+// ============================
+
+/**
+ * In-place radix-2 FFT, re/im arrays length must be power of 2.
+ */
+function fftRadix2(re, im) {
+ const n = re.length;
+ if ((n & (n - 1)) !== 0) {
+ throw new Error("FFT size must be a power of 2.");
+ }
+ // Bit-reversal permutation
+ let j = 0;
+ for (let i = 0; i < n; i++) {
+ if (i < j) {
+ [re[i], re[j]] = [re[j], re[i]];
+ [im[i], im[j]] = [im[j], im[i]];
+ }
+ let m = n >> 1;
+ while (m >= 1 && j >= m) {
+ j -= m;
+ m >>= 1;
+ }
+ j += m;
+ }
+ // Cooley–Tukey butterfly stages
+ for (let size = 2; size <= n; size <<= 1) {
+ const half = size >> 1;
+ const theta = -2 * Math.PI / size;
+ const wpr = Math.cos(theta);
+ const wpi = Math.sin(theta);
+ for (let i = 0; i < n; i += size) {
+ let wr = 1, wi = 0;
+ for (let k = 0; k < half; k++) {
+ const i0 = i + k;
+ const i1 = i + k + half;
+ const tr = wr * re[i1] - wi * im[i1];
+ const ti = wr * im[i1] + wi * re[i1];
+ re[i1] = re[i0] - tr;
+ im[i1] = im[i0] - ti;
+ re[i0] += tr;
+ im[i0] += ti;
+ const tmpWr = wr * wpr - wi * wpi;
+ wi = wr * wpi + wi * wpr;
+ wr = tmpWr;
+ }
+ }
+ }
+}
+
+/**
+ * Convert frequency in Hz to Bark scale.
+ */
+function hzToBark(f) {
+ return 13 * Math.atan(0.00076 * f) +
+ 3.5 * Math.atan(Math.pow(f / 7500, 2));
+}
+
+/**
+ * Approximate threshold in quiet (ATH) in dB SPL at frequency fHz.
+ */
+function athDb(fHz) {
+ const f = fHz / 1000;
+ if (f <= 0) return 100;
+ const term1 = 3.64 * Math.pow(f, -0.8);
+ const term2 = -6.5 * Math.exp(-0.6 * Math.pow(f - 3.3, 2));
+ const term3 = 0.001 * Math.pow(f, 4);
+ return term1 + term2 + term3;
+}
+
+// ============================
+// MPEG-1 MODEL 1 MASKING CORE
+// ============================
+
+/**
+ * Compute MPEG-1 Model 1-style masking for mono mix of buffer.
+ * Returns Bark-band levels, thresholds, instantaneous mask, margins, etc.
+ * - numFrames: number of time frames
+ * - numBands: Bark bands
+ * - instMask[b][t]: 1 if masked in band b at time t, else 0
+ * - margin[b][t]: L(b,t) - LT_global(b,t) in dB
+ * - levels[b][t], thresholds[b][t]
+ * - frameHopSec: time spacing between frames
+ * - bandFreqCenter[b]: center frequency of band b (Hz)
+ */
+function computeMp3Masking(buffer) {
+ const sr = buffer.sampleRate;
+ const ch = buffer.numberOfChannels;
+ const len = buffer.length;
+
+ // Mono downmix: average across channels
+ const mono = new Float32Array(len);
+ for (let c = 0; c < ch; c++) {
+ const d = buffer.getChannelData(c);
+ for (let i = 0; i < len; i++) {
+ mono[i] += d[i] / ch;
+ }
+ }
+
+ const N = 512; // FFT size
+ const overlapFraction = 1 / 16; // 1/16 overlap => hop = N - N/16
+ const hop = N - Math.floor(N * overlapFraction); // 512 - 32 = 480
+ const numFrames = Math.max(0, 1 + Math.floor((len - N) / hop));
+ if (numFrames <= 0) {
+ return {
+ numFrames: 0,
+ numBands: 0,
+ instMask: [],
+ margin: [],
+ levels: [],
+ thresholds: [],
+ frameHopSec: hop / sr,
+ bandFreqCenter: []
+ };
+ }
+
+ const frameHopSec = hop / sr;  // time between frames
+
+ // Hann window for each frame
+ const win = new Float32Array(N);
+ for (let n = 0; n < N; n++) {
+ win[n] = 0.5 * (1 - Math.cos(2 * Math.PI * n / (N - 1)));
+ }
+
+ const halfN = N / 2;
+ const re = new Float32Array(N);
+ const im = new Float32Array(N);
+ const P = new Float32Array(halfN + 1); // power spectrum
+ const Lbin = new Float32Array(halfN + 1); // bin level dB
+
+ // Precompute Bark and frequency per bin
+ const bark = new Float32Array(halfN + 1);
+ const freq = new Float32Array(halfN + 1);
+ let maxBark = 0;
+ for (let k = 0; k <= halfN; k++) {
+ const f = (k * sr) / N;
+ freq[k] = f;
+ const z = hzToBark(f);
+ bark[k] = z;
+ if (z > maxBark) maxBark = z;
+ }
+
+ // Integer Bark bands [0..ceil(maxBark)-1]
+ const numBands = Math.max(1, Math.ceil(maxBark));
+
+ // Map each bin to one Bark band
+ const bandBinIndices = Array.from({ length: numBands }, () => []);
+ for (let k = 0; k <= halfN; k++) {
+ let b = Math.floor(bark[k]);
+ if (b < 0) b = 0;
+ if (b >= numBands) b = numBands - 1;
+ bandBinIndices[b].push(k);
+ }
+
+ // Compute center frequency for each band
+ const bandFreqCenter = new Float32Array(numBands);
+ for (let b = 0; b < numBands; b++) {
+ const bins = bandBinIndices[b];
+ if (!bins.length) {
+ bandFreqCenter[b] = 0;
+ continue;
+ }
+ let sumF = 0;
+ let count = 0;
+ for (let i = 0; i < bins.length; i++) {
+ const k = bins[i];
+ sumF += freq[k];
+ count++;
+ }
+ bandFreqCenter[b] = count ? (sumF / count) : 0;
+ }
+
+ const eps = 1e-12;
+
+ // Allocate 2D arrays (band x frame) for levels, thresholds, masks, margins
+ const framesL  = Array.from({ length: numBands }, () => new Array(numFrames).fill(-120));
+ const framesLT = Array.from({ length: numBands }, () => new Array(numFrames).fill(-120));
+ const framesM  = Array.from({ length: numBands }, () => new Array(numFrames).fill(0));
+ const framesDel = Array.from({ length: numBands }, () => new Array(numFrames).fill(0));
+
+ // TMN/NMT as in MPEG model (tonal vs noise)
+ const TMN = 14.5;
+ const NMT = 5.0;
+
+ // Spreading function SF(Δz)
+ function spreadingFunction(dz) {
+ const v = dz + 0.474;
+ return 15.81 + 7.5 * v - 17.5 * Math.sqrt(1 + v * v);
+ }
+
+ // Loop over frames in time
+ for (let frame = 0; frame < numFrames; frame++) {
+ const start = frame * hop;
+
+ // Windowed frame into re/im
+ for (let n = 0; n < N; n++) {
+ const idx = start + n;
+ const x = idx < len ? mono[idx] : 0;
+ re[n] = x * win[n];
+ im[n] = 0;
+ }
+
+ // Perform FFT
+ fftRadix2(re, im);
+
+ // Compute power and dB level for positive frequencies
+ for (let k = 0; k <= halfN; k++) {
+ const pr = re[k];
+ const pi = im[k];
+ const mag2 = pr * pr + pi * pi;
+ P[k] = mag2;
+ Lbin[k] = 10 * Math.log10(mag2 + eps);
+ }
+
+ // Detect tonal maskers
+ const usedInTonal = new Array(halfN + 1).fill(false);
+ const tonalMaskers = [];
+ for (let k = 2; k <= halfN - 2; k++) {
+ const Lk = Lbin[k];
+ const Lkm1 = Lbin[k - 1];
+ const Lkp1 = Lbin[k + 1];
+
+ // Local maximum and 7 dB above neighbors
+ if (
+ Lk > Lkm1 && Lk > Lkp1 &&
+ Lk >= Lkm1 + 7 && Lk >= Lkp1 + 7
+ ) {
+ // Combine three bins to form tonal masker power
+ const Ptonal = (P[k - 1] || 0) + (P[k] || 0) + (P[k + 1] || 0);
+ const Lm = 10 * Math.log10(Ptonal + eps);
+ const zm = bark[k];
+ tonalMaskers.push({ L: Lm, z: zm });
+ usedInTonal[k - 1] = true;
+ usedInTonal[k] = true;
+ usedInTonal[k + 1] = true;
+ }
+ }
+
+ // Noise maskers per Bark band (exclude tonal bins)
+ const noiseMaskers = [];
+ for (let b = 0; b < numBands; b++) {
+ const bins = bandBinIndices[b];
+ if (!bins.length) continue;
+
+ let sumP = 0;
+ let sumPz = 0;
+ for (let i = 0; i < bins.length; i++) {
+ const k = bins[i];
+ if (usedInTonal[k]) continue;
+ const pk = P[k];
+ sumP += pk;
+ sumPz += pk * bark[k];
+ }
+ if (sumP > 0) {
+ const Lm = 10 * Math.log10(sumP + eps);
+ const zm = sumPz / sumP;
+ noiseMaskers.push({ L: Lm, z: zm });
+ }
+ }
+
+ // Compute band levels L(b,t)
+ for (let b = 0; b < numBands; b++) {
+ const bins = bandBinIndices[b];
+ let sumPb = 0;
+ for (let i = 0; i < bins.length; i++) {
+ const k = bins[i];
+ sumPb += P[k];
+ }
+ const Lb = sumPb > 0 ? 10 * Math.log10(sumPb + eps) : -120;
+ framesL[b][frame] = Lb;
+ }
+
+ // Build global masking threshold per band + margin
+ for (let b = 0; b < numBands; b++) {
+ const z_b = b + 0.5;  // approximate Bark center
+ const fCenter = bandFreqCenter[b] || 1000;  // fallback center frequency
+ let sumPower = 0;
+
+ // Add threshold in quiet (ATH)
+ const ATH = athDb(fCenter);
+ sumPower += Math.pow(10, ATH / 10);
+
+ // Add tonal masker contributions
+ for (let m = 0; m < tonalMaskers.length; m++) {
+ const mk = tonalMaskers[m];
+ const dz = z_b - mk.z;
+ const SF = spreadingFunction(dz);
+ const LT_i = mk.L + SF - TMN;
+ sumPower += Math.pow(10, LT_i / 10);
+ }
+
+ // Add noise masker contributions
+ for (let m = 0; m < noiseMaskers.length; m++) {
+ const mk = noiseMaskers[m];
+ const dz = z_b - mk.z;
+ const SF = spreadingFunction(dz);
+ const LT_i = mk.L + SF - NMT;
+ sumPower += Math.pow(10, LT_i / 10);
+ }
+
+ const LT_global = 10 * Math.log10(sumPower + eps);
+ const Lb = framesL[b][frame];
+ const delta = Lb - LT_global;
+
+ framesLT[b][frame] = LT_global; // global threshold
+ framesDel[b][frame] = delta; // masking margin
+ framesM[b][frame]  = delta < 0 ? 1 : 0; // instantaneous mask bit
+ }
+ }
+
+ return {
+ numFrames,
+ numBands,
+ instMask: framesM,
+ margin: framesDel,
+ levels: framesL,
+ thresholds: framesLT,
+ frameHopSec,
+ bandFreqCenter
+ };
+}
+
+// ============================
+// PERSISTENT MASKING BUILDER
+// ============================
+
+/**
+ * Build persistent masking mask from instantaneous mask + levels.
+ * Occupancy R(b,t) over window W is thresholded by alpha.
+ *
+ * @param {Object} base - mp3LastRes-like object
+ * @param {number} alpha - occupancy threshold (0..1)
+ * @param {number} W - window length in frames (odd)
+ * @param {number} Lmin - minimum level in dBFS for energy gate
+ */
+function buildPersistentMask(base, alpha, W, Lmin) {
+ const { numBands, numFrames, instMask, levels } = base;
+ const halfW = Math.floor(W / 2);
+ const mask = Array.from({ length: numBands }, () => new Array(numFrames).fill(false));
+
+ for (let b = 0; b < numBands; b++) {
+ for (let t = 0; t < numFrames; t++) {
+ let occ = 0;
+ let count = 0;
+ for (let k = t - halfW; k <= t + halfW; k++) {
+ if (k < 0 || k >= numFrames) continue;
+ occ += instMask[b][k];
+ count++;
+ }
+ const R = count ? (occ / count) : 0;
+ const Lbt = levels[b][t];
+
+ // Persist if occupancy≥alpha and band level > Lmin
+ if (R >= alpha && Lbt > Lmin) {
+ mask[b][t] = true;
+ }
+ }
+ }
+ return { mask, alpha, W, Lmin };
+}
+
+
+// HEATMAP DRAWING ================================================================
+
+
+/**
+ * Clear main masking heatmap canvas with dark background.
+ */
+function clearMp3Heatmap(canvas, ctx) {
+ canvas.width = 800;
+ canvas.height = 260;
+ ctx.fillStyle = "#020617";
+ ctx.fillRect(0, 0, canvas.width, canvas.height);
+}
+
+/**
+ * Clear margin heatmap canvas with dark background.
+ */
+function clearMp3MarginHeatmap(canvas, ctx) {
+ canvas.width = 800;
+ canvas.height = 260;
+ ctx.fillStyle = "#020617";
+ ctx.fillRect(0, 0, canvas.width, canvas.height);
+}
+
+/**
+ * Draw axes overlays on heatmaps: time along x, frequency labels on y.
+ */
+function drawAxes(ctx, canvas, numFrames, numBands, frameHopSec, bandFreqCenter) {
+ const w = canvas.width;
+ const h = canvas.height;
+ const cellW = w / numFrames;
+ const cellH = h / numBands;
+
+ ctx.fillStyle = "#9ca3af";
+ ctx.font = "10px system-ui";
+ ctx.textBaseline = "top";
+ ctx.textAlign = "center";
+
+ // Time axis ticks: 1s or 5s depending on length
+ const totalTime = numFrames * frameHopSec;
+ const tickStep = totalTime > 60 ? 5 : 1;
+ for (let t = 0; t < numFrames; t++) {
+ const timeSec = t * frameHopSec;
+ if (Math.abs((timeSec / tickStep) - Math.round(timeSec / tickStep)) < 0.01) {
+ const x = t * cellW;
+ ctx.fillText(`${Math.round(timeSec)}s`, x, 2);
+ }
+ }
+
+ // Frequency labels on right side
+ ctx.textAlign = "right";
+ ctx.textBaseline = "middle";
+
+ const labelCount = 8;
+ for (let i = 0; i < labelCount; i++) {
+ const b = Math.round(i * (numBands - 1) / (labelCount - 1));
+ const f = bandFreqCenter[b];
+ if (!isFinite(f) || f <= 0) continue;
+ const y = h - (b + 0.5) * cellH;
+ const label = f >= 1000 ? `${(f/1000).toFixed(1)}k` : `${Math.round(f)}`;
+ ctx.fillText(label + " Hz", w - 4, y);
+ }
+}
+
+/**
+ * Draw persistent masking heatmap for a result object (base).
+ */
+function drawMp3MaskingHeatmap(base, canvas, ctx) {
+ clearMp3Heatmap(canvas, ctx);
+ const { numFrames, numBands, persistMask, frameHopSec, bandFreqCenter } = base;
+ if (!numFrames || !numBands || !persistMask) return;
+
+ const w = canvas.width;
+ const h = canvas.height;
+ const cellW = w / numFrames;
+ const cellH = h / numBands;
+
+ ctx.fillStyle = "#020617";
+ ctx.fillRect(0, 0, w, h);
+
+ // Draw red blocks where persistent mask = true
+ for (let b = 0; b < numBands; b++) {
+ const y = h - (b + 1) * cellH;
+ for (let t = 0; t < numFrames; t++) {
+ if (!persistMask[b][t]) continue;
+ const x = t * cellW;
+ ctx.fillStyle = "#ef4444";
+ ctx.fillRect(x, y, cellW + 0.5, cellH + 0.5);
+ }
+ }
+
+ drawAxes(ctx, canvas, numFrames, numBands, frameHopSec, bandFreqCenter);
+}
+
+/**
+ * Map margin Δ(b,t) in [−20,0] to a red HSL color.
+ */
+function deltaToColor(deltaDb) {
+ if (!isFinite(deltaDb)) return "#020617";
+ if (deltaDb >= 0) return "#020617"; // non-masked: dark
+ const clipped = Math.max(-20, Math.min(0, deltaDb));
+ const a = Math.abs(clipped) / 20;
+ const light = 20 + 40 * a; // brightness 20→60 as margin gets more negative
+ return `hsl(0,80%,${light}%)`;
+}
+
+/**
+ * Draw masking margin heatmap Δ(b,t) using red intensity for negative margins.
+ */
+function drawMp3MarginHeatmap(base, canvas, ctx) {
+ clearMp3MarginHeatmap(canvas, ctx);
+ const { numFrames, numBands, margin, frameHopSec, bandFreqCenter } = base;
+ if (!numFrames || !numBands) return;
+
+ const w = canvas.width;
+ const h = canvas.height;
+ const cellW = w / numFrames;
+ const cellH = h / numBands;
+
+ ctx.fillStyle = "#020617";
+ ctx.fillRect(0, 0, w, h);
+
+ for (let b = 0; b < numBands; b++) {
+ const y = h - (b + 1) * cellH;
+ const row = margin[b];
+ for (let t = 0; t < numFrames; t++) {
+ const delta = row[t];
+ const x = t * cellW;
+ ctx.fillStyle = deltaToColor(delta);
+ ctx.fillRect(x, y, cellW + 0.5, cellH + 0.5);
+ }
+ }
+
+ drawAxes(ctx, canvas, numFrames, numBands, frameHopSec, bandFreqCenter);
+}
+
+// ============================
+// PERSISTENT MASK UI HANDLING
+// ============================
+
+/**
+ * Update α label text (e.g. "α = 0.60").
+ */
+function updateAlphaLabel() {
+ const a = parseFloat(alphaInput.value) || 0.6;
+ alphaLabel.textContent = `α = ${a.toFixed(2)}`;
+}
+
+/**
+ * Recompute persistent masking masks for main + ref based on UI α and W.
+ * Also redraw heatmaps and update summary text.
+ */
+function recomputePersistentFromUI() {
+ let alpha = parseFloat(alphaInput.value);
+ if (!(alpha > 0 && alpha <= 1)) alpha = 0.6;
+ let W = parseInt(windowInput.value, 10);
+ if (!Number.isFinite(W) || W < 1) W = 9;
+ if (W % 2 === 0) W += 1; // enforce odd window
+ windowInput.value = W;
+
+ if (mp3LastRes && mp3LastRes.numFrames) {
+ const { mask } = buildPersistentMask(mp3LastRes, alpha, W, -60);
+ mp3LastRes.persistMask = mask;
+ mp3LastRes.persistAlpha = alpha;
+ mp3LastRes.persistWindow = W;
+
+ drawMp3MaskingHeatmap(mp3LastRes, mp3Canvas, mp3Ctx);
+
+ mp3SummaryEl.textContent =
+ `${mp3LastRes.numFrames} frames × ${mp3LastRes.numBands} Bark bands (main). ` +
+ `Frame hop ≈ ${(mp3LastRes.frameHopSec*1000).toFixed(1)} ms, ` +
+ `persistent window W=${W} frames, α=${alpha.toFixed(2)}. ` +
+ `Suggested analyzer defaults: α≈0.6, W≈9 (no official ISO/ITU values).`;
+ }
+
+ if (mp3LastResRef && mp3LastResRef.numFrames) {
+ const { mask } = buildPersistentMask(mp3LastResRef, alpha, W, -60);
+ mp3LastResRef.persistMask = mask;
+ mp3LastResRef.persistAlpha = alpha;
+ mp3LastResRef.persistWindow = W;
+
+ drawMp3MaskingHeatmap(mp3LastResRef, mp3CanvasRef, mp3CtxRef);
+
+ mp3SummaryRefEl.textContent =
+ `${mp3LastResRef.numFrames} frames × ${mp3LastResRef.numBands} Bark bands (ref). ` +
+ `Frame hop ≈ ${(mp3LastResRef.frameHopSec*1000).toFixed(1)} ms, ` +
+ `persistent window W=${W} frames, α=${alpha.toFixed(2)}.`;
+ }
+}
+
+// α slider: update label + recompute mask
+alphaInput.addEventListener('input', () => {
+ updateAlphaLabel();
+ recomputePersistentFromUI();
+});
+
+// W input: recompute on change
+windowInput.addEventListener('change', () => {
+ recomputePersistentFromUI();
+});
+
+// Initialize α label
+updateAlphaLabel();
+
+// ============================
+// LOUDNESS CURVE DRAWING + REGION SELECTION
+// ============================
+
+/**
+ * Draw loudness curve canvas, including:
+ * - main curve
+ * - overlay ref curve (dashed)
+ * - region highlight
+ * - playhead line
+ */
+function drawLoudnessCurve() {
+ const w = 800;
+ const h = 200;
+ loudnessCanvas.width = w;
+ loudnessCanvas.height = h;
+ const ctx = loudnessCtx;
+
+ ctx.clearRect(0, 0, w, h);
+ ctx.fillStyle = "#ffffff";
+ ctx.fillRect(0, 0, w, h);
+
+ // Plot padding
+ const padL = 40;
+ const padR = 10;
+ const padT = 10;
+ const padB = 20;
+
+ // Axes base lines
+ ctx.strokeStyle = "#9ca3af";
+ ctx.lineWidth = 1;
+ ctx.beginPath();
+ ctx.moveTo(padL, padT);
+ ctx.lineTo(padL, h - padB);
+ ctx.lineTo(w - padR, h - padB);
+ ctx.stroke();
+
+ // If no main loudness curve yet, show message
+ if (!loudnessCurve || !loudnessCurve.times.length) {
+ ctx.fillStyle = "#6b7280";
+ ctx.font = "12px system-ui";
+ ctx.fillText("No loudness blocks yet. Analyze a file first.", padL + 10, (h - padB + padT)/2);
+ return;
+ }
+
+ const times = loudnessCurve.times;
+ const values = loudnessCurve.values;
+ const tMax = trackDurationSec || times[times.length - 1] || 1.0;
+ let lMin = loudnessCurve.minL;
+ let lMax = loudnessCurve.maxL;
+ if (!isFinite(lMin) || !isFinite(lMax) || lMin === lMax) {
+ lMin = -70;
+ lMax = -10;
+ }
+
+ const plotW = w - padL - padR;
+ const plotH = h - padT - padB;
+
+ const timeToX = (t) => padL + (clamp(t, 0, tMax) / tMax) * plotW;
+ const valToY = (L) => {
+ const v = clamp(L, lMin, lMax);
+ const norm = (lMax - v) / (lMax - lMin);
+ return padT + norm * plotH;
+ };
+
+ // Horizontal loudness grid lines (with LUFS labels)
+ ctx.strokeStyle = "#e5e7eb";
+ ctx.lineWidth = 1;
+ ctx.font = "10px system-ui";
+ ctx.fillStyle = "#9ca3af";
+ const gridSteps = 5;
+ for (let i = 0; i <= gridSteps; i++) {
+ const frac = i / gridSteps;
+ const L = lMin + (1 - frac) * (lMax - lMin);
+ const y = valToY(L);
+ ctx.beginPath();
+ ctx.moveTo(padL, y);
+ ctx.lineTo(w - padR, y);
+ ctx.stroke();
+ ctx.fillText(`${L.toFixed(1)} LUFS`, 2, y - 3);
+ }
+
+ // Vertical time grid lines at second intervals
+ const tStep = tMax > 60 ? 10 : (tMax > 30 ? 5 : 1);
+ ctx.textAlign = "center";
+ for (let t = 0; t <= tMax; t += tStep) {
+ const x = timeToX(t);
+ ctx.beginPath();
+ ctx.moveTo(x, padT);
+ ctx.lineTo(x, h - padB);
+ ctx.stroke();
+ ctx.fillText(`${Math.round(t)}s`, x, h - padB + 4);
+ }
+ ctx.textAlign = "left";
+
+ // Main loudness curve (solid blue)
+ ctx.strokeStyle = "#1d4ed8";
+ ctx.lineWidth = 1.5;
+ ctx.beginPath();
+ for (let i = 0; i < times.length; i++) {
+ const x = timeToX(times[i]);
+ const y = valToY(values[i]);
+ if (i === 0) ctx.moveTo(x, y);
+ else ctx.lineTo(x, y);
+ }
+ ctx.stroke();
+
+ // Reference loudness curve overlay (if available) - dashed purple
+ if (loudnessCurveRef && loudnessCurveRef.times && loudnessCurveRef.times.length) {
+ const timesRef = loudnessCurveRef.times;
+ const valuesRef = loudnessCurveRef.values;
+
+ ctx.save();
+ ctx.strokeStyle = "#9333ea";
+ ctx.lineWidth = 1.2;
+ ctx.setLineDash([4, 2]); // dashed
+
+ ctx.beginPath();
+ for (let i = 0; i < timesRef.length; i++) {
+ const x = timeToX(timesRef[i]);
+ const y = valToY(valuesRef[i]);
+ if (i === 0) ctx.moveTo(x, y);
+ else ctx.lineTo(x, y);
+ }
+ ctx.stroke();
+ ctx.restore();
+ }
+
+ // Region shading (selected analysis segment)
+ const rs = clamp(regionSel.startSec, 0, tMax);
+ const re = clamp(regionSel.endSec, 0, tMax);
+ const x0 = timeToX(Math.min(rs, re));
+ const x1 = timeToX(Math.max(rs, re));
+ ctx.fillStyle = "rgba(96,165,250,0.18)";
+ ctx.fillRect(x0, padT, Math.max(1, x1 - x0), plotH);
+
+ // Handles at region boundaries
+ ctx.fillStyle = "#1d4ed8";
+ ctx.fillRect(x0 - 2, padT, 4, plotH);
+ ctx.fillRect(x1 - 2, padT, 4, plotH);
+
+ // Playhead vertical line in orange
+ const ph = clamp(playheadSec, 0, tMax);
+ const xPH = timeToX(ph);
+ ctx.strokeStyle = "#f97316";
+ ctx.lineWidth = 1.5;
+ ctx.beginPath();
+ ctx.moveTo(xPH, padT);
+ ctx.lineTo(xPH, padT + plotH);
+ ctx.stroke();
+}
+
+/**
+ * Map x coordinate in canvas to time in seconds.
+ */
+function regionFromX(x, w) {
+ const padL = 40;
+ const padR = 10;
+ const plotW = w - padL - padR;
+ if (plotW <= 0 || !trackDurationSec) return 0;
+ const norm = clamp((x - padL) / plotW, 0, 1);
+ return norm * trackDurationSec;
+}
+
+// Next region click decides 'start' then 'end' in alternating fashion
+let nextRegionPoint = 'start';
+
+// Click on loudness canvas: set region start / end, update analysis
+loudnessCanvas.addEventListener('click', (e) => {
+ if (!loudnessCurve || !loudnessCurve.times || !loudnessCurve.times.length || !trackDurationSec) return;
+
+ const rect  = loudnessCanvas.getBoundingClientRect();
+ const xCss  = e.clientX - rect.left;  // mouse x in CSS coords
+ const scaleX = loudnessCanvas.width / rect.width;  // canvas scaling factor
+ const x = xCss * scaleX;  // transform to canvas coords
+ const w = loudnessCanvas.width;
+
+ const t = regionFromX(x, w); // convert to time (sec)
+
+ if (nextRegionPoint === 'start') {
+ regionSel.startSec = clamp(t, 0, trackDurationSec);
+ regionSel.endSec  = trackDurationSec; // provisional full end
+ nextRegionPoint = 'end';
+ } else {
+ regionSel.endSec = clamp(t, 0, trackDurationSec);
+ if (regionSel.endSec < regionSel.startSec) {
+ // Swap if user clicked left to right reversed
+ const tmp = regionSel.startSec;
+ regionSel.startSec = regionSel.endSec;
+ regionSel.endSec  = tmp;
+ }
+ nextRegionPoint = 'start';
+ updateRegionAnalysis();
+ }
+
+ drawLoudnessCurve();
+});
+
+// ============================
+// REGION ANALYSIS (crest, peaks, Zwicker) MAIN+REF
+// ============================
+
+/**
+ * Compute crest factor and peak density over [t0,t1] for a buffer.
+ */
+function analyzeRegionWave(buffer, t0, t1) {
+ if (!buffer) return null;
+ const sr = buffer.sampleRate;
+ const len = buffer.length;
+ const ch = buffer.numberOfChannels;
+
+ const start = Math.max(0, Math.floor(t0 * sr));
+ const end  = Math.min(len, Math.floor(t1 * sr));
+ if (end <= start + 1) return null;
+
+ // Downmix to mono
+ const mono = new Float32Array(end - start);
+ for (let c = 0; c < ch; c++) {
+ const d = buffer.getChannelData(c);
+ for (let i = start, j = 0; i < end; i++, j++) {
+ mono[j] += d[i] / ch;
+ }
+ }
+
+ const N = mono.length;
+ let maxAbs = 0;
+ let sumSq = 0;
+ const thresholdAmp = Math.pow(10, -18 / 20); // amplitude threshold ≈ -18 dBFS
+ let peakCount = 0;
+
+ // Compute RMS and max peak
+ for (let i = 0; i < N; i++) {
+ const v = mono[i];
+ const av = Math.abs(v);
+ if (av > maxAbs) maxAbs = av;
+ sumSq += v * v;
+ }
+
+ // Count local maxima above thresholdAmp
+ for (let i = 1; i < N - 1; i++) {
+ const v = mono[i];
+ const av = Math.abs(v);
+ if (av < thresholdAmp) continue;
+ if (av >= Math.abs(mono[i-1]) && av >= Math.abs(mono[i+1])) {
+ peakCount++;
+ }
+ }
+
+ const rms = Math.sqrt(sumSq / N) || 1e-12;
+ const crestDb = 20 * Math.log10((maxAbs || 1e-12) / rms);
+ const maxDbFS = 20 * Math.log10(maxAbs || 1e-12);
+ const rmsDbFS = 20 * Math.log10(rms);
+
+ const duration = (end - start) / sr;
+ const density = duration > 0 ? peakCount / duration : 0;
+
+ return {
+ crestDb,
+ peakDensity: density,
+ maxDbFS,
+ rmsDbFS
+ };
+}
+
+/**
+ * Estimate Zwicker loudness in sones over [t0,t1] using Bark-band levels.
+ * Optional gainDb applies a virtual loudness normalization (target - integratedLUFS).
+ */
+function estimateZwickerSones(base, t0, t1, gainDb = 0) {
+ if (!base || !base.numFrames) return NaN;
+ const { numBands, numFrames, levels, frameHopSec } = base;
+ const startFrame = clamp(Math.floor(t0 / frameHopSec), 0, numFrames - 1);
+ const endFrame  = clamp(Math.floor(t1 / frameHopSec), 0, numFrames - 1);
+ if (endFrame <= startFrame) return 0;
+
+ let totalSones = 0;
+
+ for (let b = 0; b < numBands; b++) {
+ let sumL = 0;
+ let validCount = 0;
+ for (let t = startFrame; t <= endFrame; t++) {
+ const L = levels[b][t]; // band level in dBFS-ish
+ if (!isFinite(L)) continue;
+ sumL += L;
+ validCount++;
+ }
+ if (!validCount) continue;
+
+ const LmeanDbFS = sumL / validCount;
+
+ // Apply virtual loudness normalization gain in dB
+ const LnormDbFS = LmeanDbFS + gainDb;
+
+ // Rough mapping to phon (0 dBFS -> ~100 phon)
+ const Lphon = LnormDbFS + 100;
+ if (Lphon <= 0) continue;
+
+ let soneBand;
+ if (Lphon >= 40) {
+ // >40 phon: 10 phon = 2x loudness (2^(Δphon/10))
+ soneBand = Math.pow(2, (Lphon - 40) / 10);
+ } else {
+ // <40 phon: non-linear power law
+ soneBand = Math.pow(Lphon / 40, 2.6);
+ }
+
+ if (isFinite(soneBand) && soneBand > 0) {
+ totalSones += soneBand;
+ }
+ }
+
+ return totalSones;
+}
+
+/**
+ * Update crest/peak density/Zwicker region metrics for main + ref.
+ * Uses current regionSel and platform target (for virtual normalized Zwicker).
+ */
+function updateRegionAnalysis() {
+ const t0 = Math.max(0, regionSel.startSec);
+ const t1 = Math.max(t0, regionSel.endSec);
+
+ // Determine platform target LUFS for Zwicker normalization
+ const platform = platformSelect.value;
+ const targets = {
+ spotify: -14,
+ youtube: -14,
+ apple:  -16,
+ tidal:  -14
+ };
+ const targetLUFS = targets[platform] ?? -14;
+
+ // ---------- MAIN TRACK ----------
+ if (!decodedBuffer || t1 <= t0) {
+ regionMainCrestEl.textContent  = "–";
+ regionMainPeakEl.textContent = "–";
+ regionMainZwickerEl.textContent = "–";
+ } else {
+ const rMain = analyzeRegionWave(decodedBuffer, t0, t1);
+ if (!rMain) {
+ regionMainCrestEl.textContent = "–";
+ regionMainPeakEl.textContent = "–";
+ } else {
+ regionMainCrestEl.textContent = `${rMain.crestDb.toFixed(2)} dB`;
+ regionMainPeakEl.textContent = `${rMain.peakDensity.toFixed(2)} /s`;
+ }
+
+ // Virtual gain to simulate normalized level at target LUFS
+ let gainMainDb = 0;
+ if (lastAnalysis && isFinite(lastAnalysis.integratedLUFS)) {
+ gainMainDb = targetLUFS - lastAnalysis.integratedLUFS;
+ }
+ const zMain = estimateZwickerSones(mp3LastRes, t0, t1, gainMainDb);
+
+ if (isFinite(zMain) && zMain > 0) {
+ regionMainZwickerEl.textContent = `${zMain.toFixed(2)} sones`;
+ } else {
+ regionMainZwickerEl.textContent = "0.00 sones";
+ }
+ }
+
+ // ---------- REFERENCE TRACK ----------
+ if (!decodedBufferRef || t1 <= t0) {
+ regionRefCrestEl.textContent  = "–";
+ regionRefPeakEl.textContent = "–";
+ regionRefZwickerEl.textContent = "–";
+ } else {
+ const rRef = analyzeRegionWave(decodedBufferRef, t0, t1);
+ if (!rRef) {
+ regionRefCrestEl.textContent = "–";
+ regionRefPeakEl.textContent = "–";
+ } else {
+ regionRefCrestEl.textContent = `${rRef.crestDb.toFixed(2)} dB`;
+ regionRefPeakEl.textContent = `${rRef.peakDensity.toFixed(2)} /s`;
+ }
+
+ // Virtual gain for ref based on ref integrated LUFS
+ let gainRefDb = 0;
+ if (lastAnalysisRef && isFinite(lastAnalysisRef.integratedLUFS)) {
+ gainRefDb = targetLUFS - lastAnalysisRef.integratedLUFS;
+ }
+ const zRef = estimateZwickerSones(mp3LastResRef, t0, t1, gainRefDb);
+
+ if (isFinite(zRef) && zRef > 0) {
+ regionRefZwickerEl.textContent = `${zRef.toFixed(2)} sones`;
+ } else {
+ regionRefZwickerEl.textContent = "0.00 sones";
+ }
+ }
+}
+
+// ============================
+// INITIALIZATION + BUTTON BINDINGS
+// ============================
+
+// Clear all heatmaps initially
+clearMp3Heatmap(mp3Canvas, mp3Ctx);
+clearMp3MarginHeatmap(mp3MarginCanvas, mp3MarginCtx);
+clearMp3Heatmap(mp3CanvasRef, mp3CtxRef);
+clearMp3MarginHeatmap(mp3MarginCanvasRef, mp3MarginCtxRef);
+
+// Draw loudness canvas blank state
+drawLoudnessCurve();
+
+// Playback buttons: original
+playOriginalBtn.addEventListener('click', () => {
+ lastPlaybackNormalized = false;
+ const offset = parseFloat(seekBar.value) || 0;
+ startPlayback({ normalized: false, offsetSec: offset });
+});
+
+// Playback buttons: normalized
+playNormBtn.addEventListener('click', () => {
+ lastPlaybackNormalized = true;
+ const offset = parseFloat(seekBar.value) || 0;
+ startPlayback({ normalized: true, offsetSec: offset });
+});
+
+// Stop button
+stopPlaybackBtn.addEventListener('click', () => {
+ stopPlayback();
+ statusElement.textContent = "Playback stopped.";
+});
+
+// Initialize analyze button state
+updateAnalyzeButton();
+</script>
+  <script src="./logger-bridge.js?v=7"></script>
+  <script src="./liquid.js?v=7"></script>
+</body>
+</html>

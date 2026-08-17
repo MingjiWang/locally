@@ -1,0 +1,335 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Transfer</title>
+  <link rel="stylesheet" href="./modern.css?v=8" />
+  <style>
+    .xfer-lede {
+      color: var(--text-body);
+      font-size: 12.5px;
+      line-height: 1.7;
+      margin: 2px 0 18px;
+      max-width: 68ch;
+    }
+    .xfer-modes {
+      display: flex;
+      gap: 10px;
+      margin-bottom: 20px;
+    }
+    .xfer-mode-btn {
+      flex: 1;
+      opacity: 0.55;
+    }
+    .xfer-mode-btn.active {
+      opacity: 1;
+      outline: 2px solid var(--accent-1);
+      outline-offset: 1px;
+    }
+    .code-label {
+      font-size: 10.5px;
+      letter-spacing: 0.14em;
+      text-transform: uppercase;
+      color: var(--text-soft);
+      margin-bottom: 8px;
+    }
+    .code-display {
+      font-family: var(--font-mono);
+      font-size: clamp(34px, 12vw, 64px);
+      font-weight: 700;
+      letter-spacing: 0.28em;
+      text-align: center;
+      color: var(--text-strong);
+      padding: 14px 10px 10px;
+      text-indent: 0.28em;
+    }
+    .code-input {
+      width: 100%;
+      font-family: var(--font-mono);
+      font-size: 34px;
+      font-weight: 700;
+      letter-spacing: 0.28em;
+      text-align: center;
+      text-indent: 0.28em;
+      padding: 14px 10px;
+      box-sizing: border-box;
+    }
+    .xfer-status {
+      font-size: 12px;
+      line-height: 1.6;
+      color: var(--text-body);
+      margin-top: 12px;
+      min-height: 1.2em;
+    }
+    .field-row { margin-top: 12px; }
+    .hidden { display: none !important; }
+
+    /* QR */
+    .qr-wrap {
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      gap: 8px;
+      margin: 6px 0 10px;
+    }
+    .qr-box {
+      background: #fff;
+      padding: 10px;
+      border-radius: 6px;
+      line-height: 0;
+      box-shadow: 0 6px 24px rgba(0, 0, 0, 0.35);
+    }
+    .qr-box svg, .qr-box img { display: block; width: 168px; height: 168px; }
+    .qr-hint {
+      font-size: 10.5px;
+      letter-spacing: 0.1em;
+      text-transform: uppercase;
+      color: var(--text-soft);
+    }
+
+    /* SAS verification */
+    .verify {
+      margin: 6px 0 4px;
+      padding: 14px;
+      border: 1px solid var(--accent-1);
+      border-radius: var(--radius-lg, 8px);
+      background: rgba(255, 59, 48, 0.06);
+    }
+    .verify-label {
+      font-size: 10.5px;
+      letter-spacing: 0.14em;
+      text-transform: uppercase;
+      color: var(--accent-2);
+      margin-bottom: 8px;
+    }
+    .verify-emojis {
+      font-size: 40px;
+      letter-spacing: 0.12em;
+      text-align: center;
+      line-height: 1.2;
+      padding: 6px 0 10px;
+      font-family: "Apple Color Emoji", "Segoe UI Emoji", "Noto Color Emoji", sans-serif;
+    }
+    .verify-note {
+      font-size: 11.5px;
+      line-height: 1.6;
+      color: var(--text-body);
+      margin-bottom: 10px;
+    }
+
+    /* destination folder + send actions */
+    .dest, .send-actions { margin: 4px 0 12px; }
+    .send-actions { display: flex; gap: 10px; flex-wrap: wrap; }
+    .send-actions button { flex: 1; min-width: 130px; }
+    .note {
+      font-size: 11px;
+      line-height: 1.55;
+      color: var(--text-soft);
+      margin-top: 8px;
+    }
+    .note strong { color: var(--text-body); }
+
+    /* interruption / failure banner */
+    .xfer-banner {
+      display: flex;
+      align-items: center;
+      gap: 12px;
+      flex-wrap: wrap;
+      margin: 0 0 18px;
+      padding: 12px 14px;
+      border: 1px solid var(--accent-1);
+      border-radius: var(--radius-lg, 8px);
+      background: rgba(255, 59, 48, 0.10);
+    }
+    .xfer-banner #xferBannerMsg {
+      flex: 1;
+      min-width: 180px;
+      font-size: 12px;
+      line-height: 1.55;
+      color: var(--text-body);
+    }
+    .xfer-banner button { min-width: 120px; }
+
+    .drop-zone.busy { opacity: 0.6; pointer-events: none; }
+
+    /* progress card */
+    .xfer-file { margin-top: 14px; }
+    .xfer-file-head {
+      display: flex;
+      justify-content: space-between;
+      align-items: baseline;
+      font-size: 10.5px;
+      letter-spacing: 0.1em;
+      text-transform: uppercase;
+      color: var(--text-soft);
+      margin-bottom: 6px;
+    }
+    .xfer-file-row {
+      display: flex;
+      justify-content: space-between;
+      align-items: baseline;
+      font-size: 11.5px;
+      letter-spacing: 0.04em;
+    }
+    .xfer-file-name {
+      color: var(--text-strong);
+      overflow: hidden;
+      text-overflow: ellipsis;
+      white-space: nowrap;
+      max-width: 72%;
+      direction: rtl; /* keep the file name / extension visible when clipped */
+      text-align: left;
+    }
+    .xfer-file-pct { color: var(--accent-2); font-weight: 700; }
+    .xfer-bar {
+      height: 8px;
+      margin: 7px 0 5px;
+      border-radius: 2px;
+      background: rgba(255, 255, 255, 0.08);
+      overflow: hidden;
+    }
+    .xfer-bar-fill {
+      height: 100%;
+      background: var(--accent-1);
+      transition: width 0.12s linear;
+    }
+    .xfer-file-sub {
+      font-size: 10.5px;
+      color: var(--text-soft);
+      letter-spacing: 0.06em;
+    }
+
+    /* completed file list */
+    .xfer-list { margin-top: 14px; display: grid; gap: 6px; }
+    .xfer-list-item {
+      display: flex;
+      justify-content: space-between;
+      gap: 10px;
+      font-size: 11.5px;
+      padding-bottom: 6px;
+      border-bottom: 1px solid rgba(255, 255, 255, 0.07);
+    }
+    .xfer-list-item .name {
+      color: var(--text-body);
+      overflow: hidden;
+      text-overflow: ellipsis;
+      white-space: nowrap;
+    }
+    .xfer-list-item .ok { color: #7ee29a; letter-spacing: 0.06em; white-space: nowrap; }
+    .xfer-list-item .skip { color: var(--text-soft); }
+  </style>
+</head>
+<body>
+  <div class="app">
+    <div class="window">
+      <div class="title-bar">
+        <div class="title-bar-text">Transfer // Peer Beam</div>
+      </div>
+
+      <div class="window-body">
+        <p class="xfer-lede">
+          Send files or whole folders straight to another device,
+          browser-to-browser. Files are end-to-end encrypted and never stored
+          on a server &mdash; only the 6-digit handshake is brokered. Keep this
+          tab open on both devices.
+        </p>
+
+        <div class="xfer-modes">
+          <button class="xfer-mode-btn active" id="modeSend">Send</button>
+          <button class="xfer-mode-btn" id="modeReceive">Receive</button>
+        </div>
+
+        <div id="xferBanner" class="xfer-banner hidden">
+          <span id="xferBannerMsg"></span>
+          <button id="xferResetBtn">Start over</button>
+        </div>
+
+        <!-- ============ SEND ============ -->
+        <section id="sendPanel">
+          <div class="section-title">Send files</div>
+
+          <div id="sendStart">
+            <button id="createBtn">Create transfer code</button>
+          </div>
+
+          <div id="sendCodeArea" class="hidden">
+            <div class="code-label">Enter this code on the other device</div>
+            <div class="code-display" id="codeDisplay">------</div>
+            <div class="qr-wrap" id="qrWrap">
+              <div class="qr-box" id="qrBox"></div>
+              <div class="qr-hint">or scan to open on the other device</div>
+            </div>
+            <div class="xfer-status" id="sendStatus"></div>
+          </div>
+
+          <div id="sendVerify" class="verify hidden">
+            <div class="verify-label">Security check</div>
+            <div class="verify-emojis" id="sendSas"></div>
+            <div class="verify-note">
+              Make sure these symbols match on both devices, then continue.
+              If they differ, do not send &mdash; cancel and try again.
+            </div>
+            <button id="verifyConfirmBtn">Symbols match &mdash; continue</button>
+          </div>
+
+          <div id="sendFileArea" class="hidden">
+            <div class="send-actions">
+              <button id="chooseFilesBtn">Choose files</button>
+              <button id="chooseFolderBtn">Choose folder</button>
+            </div>
+            <input type="file" id="sendFileInput" multiple style="display:none;" />
+            <input type="file" id="sendFolderInput" webkitdirectory style="display:none;" />
+            <div class="drop-zone" id="sendDrop">
+              <strong>Drop files or a folder here</strong><br />or use the buttons above
+            </div>
+            <div id="sendProgress"></div>
+            <div class="xfer-list" id="sendList"></div>
+          </div>
+        </section>
+
+        <!-- ============ RECEIVE ============ -->
+        <section id="receivePanel" class="hidden">
+          <div class="section-title">Receive files</div>
+
+          <div id="recvStart">
+            <div class="code-label">Enter the 6-digit code from the sending device</div>
+            <input class="code-input" id="codeInput" inputmode="numeric"
+                   maxlength="6" placeholder="000000" autocomplete="off" />
+            <div class="field-row">
+              <button id="connectBtn">Connect</button>
+            </div>
+            <div class="xfer-status" id="recvStatus"></div>
+          </div>
+
+          <div id="recvVerify" class="verify hidden">
+            <div class="verify-label">Security check</div>
+            <div class="verify-emojis" id="recvSas"></div>
+            <div class="verify-note">
+              These symbols should match the sending device. If they differ,
+              someone else may be on the line &mdash; disconnect.
+            </div>
+          </div>
+
+          <div id="recvDest" class="dest hidden">
+            <button id="destBtn">Choose destination folder</button>
+            <div class="note" id="destNote">
+              <strong>Recommended</strong> for folders and large files: streams
+              straight to disk and lets an interrupted transfer resume (already
+              received files are skipped). Otherwise each file downloads
+              individually to your Downloads folder.
+            </div>
+          </div>
+
+          <div id="recvProgress" class="hidden"></div>
+          <div class="xfer-list" id="recvList"></div>
+        </section>
+      </div>
+    </div>
+  </div>
+
+  <script src="./qrcode-generator.js?v=8"></script>
+  <script src="./transfer.js?v=11"></script>
+  <script src="./liquid.js?v=7"></script>
+</body>
+</html>

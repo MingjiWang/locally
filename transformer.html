@@ -1,0 +1,493 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Transform</title>
+  <link rel="stylesheet" href="./modern.css?v=8" />
+  <style>
+    .tf-lede { color: var(--text-body); font-size: 12.5px; line-height: 1.7; margin: 2px 0 16px; max-width: 70ch; }
+    .tf-source-meta { font-size: 12px; color: var(--text-soft); margin: 8px 0 2px; min-height: 1.2em; }
+    .tf-source-meta strong { color: var(--text-strong); }
+
+    .tf-grid { display: grid; grid-template-columns: minmax(0, 1fr) minmax(0, 1fr); gap: 16px; }
+    @media (max-width: 760px) { .tf-grid { grid-template-columns: 1fr; } }
+
+    .spec-wrap { margin-top: 8px; }
+    .spec-label { font-size: 10.5px; letter-spacing: 0.14em; text-transform: uppercase; color: var(--text-soft); margin-bottom: 6px; }
+    canvas.spec { width: 100%; height: 150px; display: block; }
+
+    .chain-toolbar { display: flex; flex-wrap: wrap; gap: 8px; margin: 6px 0 12px; align-items: center; }
+    .chain-toolbar .spacer { flex: 1; }
+    .add-btn { font-size: 10.5px !important; }
+
+    .chain-list { display: grid; gap: 10px; }
+    .chain-empty {
+      border: 1px dashed var(--glass-border);
+      border-radius: var(--radius-md);
+      padding: 20px; text-align: center; color: var(--text-soft); font-size: 12px;
+    }
+    .stage {
+      border: 1px solid var(--glass-border);
+      border-radius: var(--radius-md);
+      background: rgba(255,255,255,0.04);
+      box-shadow: inset 0 1px 0 rgba(255,255,255,0.08);
+      padding: 12px 14px;
+    }
+    .stage-head { display: flex; align-items: center; gap: 10px; margin-bottom: 8px; }
+    .stage-idx {
+      font-size: 10px; color: var(--accent-2); letter-spacing: 0.1em;
+      border: 1px solid rgba(255,59,48,0.34); background: rgba(255,59,48,0.12);
+      border-radius: 4px; padding: 2px 7px; text-transform: uppercase;
+    }
+    .stage-name { font-size: 12px; font-weight: 600; color: var(--text-strong); text-transform: uppercase; letter-spacing: 0.1em; }
+    .stage-actions { margin-left: auto; display: flex; gap: 6px; }
+    .stage-actions button { padding: 5px 10px !important; font-size: 10px !important; }
+    .stage-params { display: grid; gap: 10px; }
+    .param-row { display: grid; grid-template-columns: 120px 1fr 62px; gap: 10px; align-items: center; }
+    .param-row label { font-size: 11.5px; color: var(--text-body); }
+    .param-row .val { font-size: 11.5px; color: var(--accent-2); text-align: right; font-variant-numeric: tabular-nums; }
+    .param-check { display: flex; align-items: center; gap: 8px; font-size: 11.5px; color: var(--text-body); }
+    .param-check input { width: auto !important; }
+    .param-inline { display: flex; gap: 12px; flex-wrap: wrap; align-items: center; }
+    .param-inline label { font-size: 11.5px; color: var(--text-body); }
+
+    .render-row { display: flex; gap: 10px; align-items: center; flex-wrap: wrap; margin-top: 6px; }
+    .render-row progress { flex: 1; min-width: 140px; }
+    .out-actions { display: flex; gap: 10px; flex-wrap: wrap; margin-top: 10px; }
+    .out-actions a.dl-btn {
+      display: inline-flex; align-items: center;
+      border: 1px solid var(--glass-border); background: var(--glass-bg);
+      color: var(--text-strong); font-size: 11px; letter-spacing: 0.1em; text-transform: uppercase;
+      padding: 10px 17px; border-radius: 999px; text-decoration: none;
+    }
+    .hidden { display: none !important; }
+    audio { width: 100%; margin-top: 8px; filter: invert(0.92) hue-rotate(180deg); border-radius: 999px; }
+    #status { font-size: 12px; color: var(--text-body); margin-top: 4px; min-height: 1.2em; }
+  </style>
+</head>
+<body>
+  <div class="app">
+    <div class="window">
+      <div class="title-bar">
+        <div class="title-bar-text">Transform // Spectral + Temporal</div>
+      </div>
+
+      <div class="window-body">
+        <p class="tf-lede">
+          Reshape a sound while keeping it recognizable. Build a short chain of
+          transforms and render. Everything runs locally with Web Audio.
+        </p>
+
+        <!-- SOURCE -->
+        <div class="section-title">Source</div>
+        <div class="drop-zone" id="dropZone">
+          <input type="file" id="fileInput" accept="audio/*,video/*" />
+          <strong>Drop audio</strong> or click to choose &middot; or send one over from the Extract tab
+        </div>
+        <div class="tf-source-meta" id="sourceMeta"></div>
+        <audio id="srcAudio" controls class="hidden"></audio>
+
+        <!-- CHAIN -->
+        <div class="section-title">Transform chain</div>
+        <div class="chain-toolbar">
+          <button class="add-btn" data-add="pitch" type="button">+ Pitch</button>
+          <button class="add-btn" data-add="stretch" type="button">+ Stretch</button>
+          <button class="add-btn" data-add="reverse" type="button">+ Reverse</button>
+          <button class="add-btn" data-add="vocode" type="button">+ Vocode</button>
+          <span class="spacer"></span>
+          <button id="clearChain" type="button">Clear</button>
+        </div>
+        <div class="chain-list" id="chainList"></div>
+
+        <!-- RENDER -->
+        <div class="section-title">Render</div>
+        <div class="render-row">
+          <button id="renderBtn" type="button" disabled>Render</button>
+          <progress id="renderProg" class="hidden" max="1" value="0"></progress>
+        </div>
+        <div id="status">Load a source to begin.</div>
+
+        <!-- OUTPUT -->
+        <div class="tf-grid" style="margin-top:14px;">
+          <div class="spec-wrap">
+            <div class="spec-label">Before</div>
+            <canvas class="spec" id="specBefore" width="512" height="150"></canvas>
+          </div>
+          <div class="spec-wrap">
+            <div class="spec-label">After</div>
+            <canvas class="spec" id="specAfter" width="512" height="150"></canvas>
+          </div>
+        </div>
+
+        <audio id="outAudio" controls class="hidden"></audio>
+        <div class="out-actions" id="outActions"></div>
+
+        <pre id="log" aria-hidden="true"></pre>
+      </div>
+    </div>
+  </div>
+
+  <script src="./transformer-dsp.js?v=1"></script>
+  <script src="./logger-bridge.js?v=8"></script>
+  <script src="./liquid.js?v=8"></script>
+  <script>
+  (function () {
+    "use strict";
+    const DSP = self.TransformerDSP;
+    const el = (id) => document.getElementById(id);
+    const logEl = el("log");
+    const statusEl = el("status");
+    function log(m) { if (logEl) logEl.textContent += (m + "\n"); }
+    function status(m) { if (statusEl) statusEl.textContent = m; log("· " + m); }
+
+    // -------- state --------
+    let audioCtx = null;
+    let srcChannels = null;   // Array<Float32Array>
+    let srcSampleRate = 0;
+    let srcDuration = 0;
+    let srcName = "audio";
+    let outChannels = null;
+    let outURL = null;
+    let srcURL = null;
+    let uid = 0;
+    const stages = []; // { id, type, params }
+
+    function ctx() {
+      if (!audioCtx) audioCtx = new (window.AudioContext || window.webkitAudioContext)();
+      return audioCtx;
+    }
+
+    // -------- source loading --------
+    async function loadBlob(blob, name) {
+      try {
+        status("Decoding " + (name || "audio") + "…");
+        const buf = await blob.arrayBuffer();
+        const audioBuf = await ctx().decodeAudioData(buf.slice(0));
+        srcSampleRate = audioBuf.sampleRate;
+        srcDuration = audioBuf.duration;
+        srcChannels = [];
+        for (let c = 0; c < audioBuf.numberOfChannels; c++) {
+          srcChannels.push(audioBuf.getChannelData(c).slice());
+        }
+        srcName = (name || "audio").replace(/\.[^.]+$/, "");
+        if (srcURL) URL.revokeObjectURL(srcURL);
+        srcURL = URL.createObjectURL(blob);
+        const sa = el("srcAudio");
+        sa.src = srcURL; sa.classList.remove("hidden");
+        el("sourceMeta").innerHTML =
+          "<strong>" + escapeHtml(name || "audio") + "</strong> · " +
+          fmtDur(srcDuration) + " · " + srcSampleRate + " Hz · " +
+          (srcChannels.length === 1 ? "mono" : srcChannels.length + " ch");
+        drawSpectrogram(el("specBefore"), srcChannels[0], srcSampleRate);
+        el("renderBtn").disabled = false;
+        status("Source ready — build a chain and render.");
+        renderChain();
+      } catch (err) {
+        status("Could not decode: " + (err.message || err));
+      }
+    }
+
+    function fmtDur(s) {
+      if (!isFinite(s)) return "?";
+      const m = Math.floor(s / 60), sec = (s % 60);
+      return m + ":" + sec.toFixed(1).padStart(4, "0");
+    }
+    function escapeHtml(s) {
+      return String(s).replace(/[&<>"]/g, (c) => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;" }[c]));
+    }
+
+    // drop zone
+    const dz = el("dropZone"), fi = el("fileInput");
+    dz.addEventListener("click", () => fi.click());
+    dz.addEventListener("dragover", (e) => { e.preventDefault(); dz.classList.add("drop-zone--hover"); });
+    dz.addEventListener("dragleave", (e) => { e.preventDefault(); dz.classList.remove("drop-zone--hover"); });
+    dz.addEventListener("drop", (e) => {
+      e.preventDefault(); dz.classList.remove("drop-zone--hover");
+      const f = e.dataTransfer.files && e.dataTransfer.files[0];
+      if (f) loadBlob(f, f.name);
+    });
+    fi.addEventListener("change", () => {
+      const f = fi.files && fi.files[0];
+      if (f) loadBlob(f, f.name);
+    });
+
+    // -------- chain definitions --------
+    const DEFS = {
+      pitch: { name: "Pitch shift", make: () => ({ semitones: 0, formant: true }) },
+      stretch: { name: "Time stretch", make: () => ({ rate: 1, transient: true }) },
+      reverse: { name: "Reverse", make: () => ({}) },
+      vocode: { name: "Vocoder", make: () => ({ bands: 20, carrier: "saw", carrierFreq: 110, mix: 1 }) },
+    };
+
+    document.querySelectorAll("[data-add]").forEach((b) =>
+      b.addEventListener("click", () => addStage(b.getAttribute("data-add"))));
+    el("clearChain").addEventListener("click", () => { stages.length = 0; renderChain(); });
+
+    function addStage(type) {
+      if (stages.length >= 6) { status("Chain limit is 6 stages."); return; }
+      stages.push({ id: ++uid, type, params: DEFS[type].make() });
+      renderChain();
+    }
+    function removeStage(id) {
+      const i = stages.findIndex((s) => s.id === id);
+      if (i >= 0) stages.splice(i, 1);
+      renderChain();
+    }
+    function moveStage(id, dir) {
+      const i = stages.findIndex((s) => s.id === id);
+      const j = i + dir;
+      if (i < 0 || j < 0 || j >= stages.length) return;
+      const t = stages[i]; stages[i] = stages[j]; stages[j] = t;
+      renderChain();
+    }
+
+    function renderChain() {
+      const list = el("chainList");
+      list.innerHTML = "";
+      if (!stages.length) {
+        const d = document.createElement("div");
+        d.className = "chain-empty";
+        d.textContent = "No transforms yet. Add Pitch, Stretch, Reverse, or Vocode above.";
+        list.appendChild(d);
+        return;
+      }
+      stages.forEach((stage, idx) => list.appendChild(stageCard(stage, idx)));
+    }
+
+    function stageCard(stage, idx) {
+      const card = document.createElement("div");
+      card.className = "stage";
+      const head = document.createElement("div");
+      head.className = "stage-head";
+      head.innerHTML =
+        '<span class="stage-idx">' + String(idx + 1).padStart(2, "0") + "</span>" +
+        '<span class="stage-name">' + DEFS[stage.type].name + "</span>";
+      const actions = document.createElement("div");
+      actions.className = "stage-actions";
+      const up = btn("↑", () => moveStage(stage.id, -1));
+      const dn = btn("↓", () => moveStage(stage.id, 1));
+      const rm = btn("✕", () => removeStage(stage.id));
+      actions.append(up, dn, rm);
+      head.appendChild(actions);
+      card.appendChild(head);
+
+      const params = document.createElement("div");
+      params.className = "stage-params";
+      buildParams(stage, params);
+      card.appendChild(params);
+      return card;
+    }
+
+    function btn(label, fn) {
+      const b = document.createElement("button");
+      b.type = "button"; b.textContent = label;
+      b.addEventListener("click", fn);
+      return b;
+    }
+
+    function sliderRow(labelText, min, max, step, value, fmt, onInput) {
+      const row = document.createElement("div");
+      row.className = "param-row";
+      const lab = document.createElement("label"); lab.textContent = labelText;
+      const inp = document.createElement("input");
+      inp.type = "range"; inp.min = min; inp.max = max; inp.step = step; inp.value = value;
+      const val = document.createElement("span"); val.className = "val"; val.textContent = fmt(value);
+      inp.addEventListener("input", () => { const v = parseFloat(inp.value); val.textContent = fmt(v); onInput(v); });
+      row.append(lab, inp, val);
+      return row;
+    }
+    function checkRow(labelText, checked, onChange) {
+      const wrap = document.createElement("label");
+      wrap.className = "param-check";
+      const cb = document.createElement("input");
+      cb.type = "checkbox"; cb.checked = checked;
+      cb.addEventListener("change", () => onChange(cb.checked));
+      wrap.append(cb, document.createTextNode(labelText));
+      return wrap;
+    }
+
+    function buildParams(stage, container) {
+      const p = stage.params;
+      if (stage.type === "pitch") {
+        container.appendChild(sliderRow("Semitones", -24, 24, 1, p.semitones,
+          (v) => (v > 0 ? "+" : "") + v, (v) => (p.semitones = v)));
+        container.appendChild(checkRow("Preserve formants (keeps voices natural)", p.formant,
+          (v) => (p.formant = v)));
+      } else if (stage.type === "stretch") {
+        container.appendChild(sliderRow("Length ×", 0.25, 4, 0.05, p.rate,
+          (v) => v.toFixed(2) + "×", (v) => { p.rate = v; updateStretchNote(stage, container); }));
+        const note = document.createElement("div");
+        note.className = "tf-source-meta"; note.dataset.note = "stretch";
+        container.appendChild(note);
+        container.appendChild(checkRow("Preserve transients (keeps hits sharp)", p.transient,
+          (v) => (p.transient = v)));
+        updateStretchNote(stage, container);
+      } else if (stage.type === "reverse") {
+        const d = document.createElement("div");
+        d.className = "tf-source-meta";
+        d.textContent = "Plays the audio backwards. No parameters.";
+        container.appendChild(d);
+      } else if (stage.type === "vocode") {
+        container.appendChild(sliderRow("Bands", 6, 48, 1, p.bands,
+          (v) => String(v), (v) => (p.bands = v)));
+        const inline = document.createElement("div");
+        inline.className = "param-inline";
+        const carLab = document.createElement("label"); carLab.textContent = "Carrier";
+        const sel = document.createElement("select");
+        [["saw", "Saw (bright)"], ["pulse", "Pulse (buzzy)"], ["noise", "Noise (whisper)"]].forEach(([v, t]) => {
+          const o = document.createElement("option"); o.value = v; o.textContent = t;
+          if (v === p.carrier) o.selected = true; sel.appendChild(o);
+        });
+        sel.addEventListener("change", () => { p.carrier = sel.value; freqRow.style.opacity = p.carrier === "noise" ? 0.4 : 1; });
+        inline.append(carLab, sel);
+        container.appendChild(inline);
+        const freqRow = sliderRow("Carrier pitch", 40, 500, 1, p.carrierFreq,
+          (v) => v + " Hz", (v) => (p.carrierFreq = v));
+        freqRow.style.opacity = p.carrier === "noise" ? 0.4 : 1;
+        container.appendChild(freqRow);
+        container.appendChild(sliderRow("Mix", 0, 1, 0.05, p.mix,
+          (v) => Math.round(v * 100) + "%", (v) => (p.mix = v)));
+      }
+    }
+
+    function updateStretchNote(stage, container) {
+      const note = container.querySelector('[data-note="stretch"]');
+      if (note && srcDuration) {
+        note.textContent = "→ " + fmtDur(srcDuration * stage.params.rate) +
+          " (from " + fmtDur(srcDuration) + ")";
+      } else if (note) {
+        note.textContent = "";
+      }
+    }
+
+    // -------- spectrogram --------
+    function drawSpectrogram(canvas, data, sr) {
+      const ctx2 = canvas.getContext("2d");
+      const W = canvas.width, H = canvas.height;
+      ctx2.clearRect(0, 0, W, H);
+      if (!data || data.length < 256) return;
+      const N = 1024, hop = 512, half = N >> 1;
+      const win = DSP._hann(N);
+      const cols = Math.min(W, Math.max(1, Math.floor((data.length - N) / hop)));
+      const colStep = Math.max(1, Math.floor((data.length - N) / hop / cols));
+      const re = new Float32Array(N), im = new Float32Array(N);
+      const img = ctx2.createImageData(W, H);
+      // precompute a column then paint scaled to W
+      const mags = new Float32Array(half);
+      for (let cx = 0; cx < cols; cx++) {
+        const pos = cx * colStep * hop;
+        for (let n = 0; n < N; n++) { re[n] = (data[pos + n] || 0) * win[n]; im[n] = 0; }
+        DSP._fft(re, im);
+        for (let k = 0; k < half; k++) {
+          const m = Math.hypot(re[k], im[k]);
+          mags[k] = 20 * Math.log10(m + 1e-6);
+        }
+        const x0 = Math.floor((cx / cols) * W), x1 = Math.floor(((cx + 1) / cols) * W);
+        for (let y = 0; y < H; y++) {
+          // y=0 top = high freq (log scale for musicality)
+          const frac = 1 - y / H;
+          const k = Math.min(half - 1, Math.floor(Math.pow(frac, 2) * (half - 1)));
+          let v = (mags[k] + 90) / 90; // ~ -90..0 dB → 0..1
+          v = Math.max(0, Math.min(1, v));
+          const [r, g, b] = heat(v);
+          for (let x = x0; x < x1; x++) {
+            const idx = (y * W + x) * 4;
+            img.data[idx] = r; img.data[idx + 1] = g; img.data[idx + 2] = b; img.data[idx + 3] = 255;
+          }
+        }
+      }
+      ctx2.putImageData(img, 0, 0);
+    }
+    function heat(v) {
+      // dark → hazard red → orange → white (matches kit accent)
+      if (v < 0.5) { const t = v / 0.5; return [Math.round(20 + t * 235), Math.round(10 + t * 49), Math.round(12 + t * 36)]; }
+      const t = (v - 0.5) / 0.5;
+      return [255, Math.round(59 + t * 196), Math.round(48 + t * 207)];
+    }
+
+    // -------- render --------
+    let worker = null;
+    el("renderBtn").addEventListener("click", () => {
+      if (!srcChannels) { status("Load a source first."); return; }
+      if (!stages.length) { status("Add at least one transform."); return; }
+      const prog = el("renderProg");
+      prog.classList.remove("hidden"); prog.value = 0;
+      el("renderBtn").disabled = true;
+      status("Rendering " + stages.length + " stage(s)…");
+
+      // copy channels so the main-thread source stays intact
+      const copy = srcChannels.map((c) => Float32Array.from(c));
+      const plainStages = stages.map((s) => ({ type: s.type, params: JSON.parse(JSON.stringify(s.params)) }));
+
+      if (worker) worker.terminate();
+      worker = new Worker("./transformer-worker.js?v=1");
+      worker.onmessage = (e) => {
+        const d = e.data;
+        if (d.type === "progress") {
+          prog.value = d.frac;
+          status("Rendering: " + (d.label || "") + " " + Math.round(d.frac * 100) + "%");
+        } else if (d.type === "done") {
+          prog.value = 1;
+          outChannels = d.channels;
+          finishRender(d.channels, d.sr);
+          el("renderBtn").disabled = false;
+          worker.terminate(); worker = null;
+        } else if (d.type === "error") {
+          status("Render failed: " + d.message);
+          el("renderBtn").disabled = false;
+          worker.terminate(); worker = null;
+        }
+      };
+      worker.postMessage({ type: "render", channels: copy, sr: srcSampleRate, stages: plainStages });
+    });
+
+    function finishRender(channels, sr) {
+      drawSpectrogram(el("specAfter"), channels[0], sr);
+      const wav = DSP.encodeWav(channels, sr);
+      if (outURL) URL.revokeObjectURL(outURL);
+      outURL = URL.createObjectURL(wav);
+      const oa = el("outAudio");
+      oa.src = outURL; oa.classList.remove("hidden");
+      const dur = channels[0].length / sr;
+      status("Done — " + fmtDur(dur) + " rendered.");
+
+      const outName = srcName + "_transformed.wav";
+      const actions = el("outActions");
+      actions.innerHTML = "";
+      const dl = document.createElement("a");
+      dl.className = "dl-btn"; dl.href = outURL; dl.download = outName; dl.textContent = "Download WAV";
+      const toConv = btn("Send to Converter", () => handoff("media", wav, outName, "audio/wav"));
+      actions.append(dl, toConv);
+      log("✅ rendered " + outName + " (" + wav.size + " bytes)");
+    }
+
+    // -------- cross-tab handoff --------
+    function handoff(target, blob, name, mime) {
+      blob.arrayBuffer().then((buf) => {
+        try {
+          window.parent.postMessage({
+            type: "media-handoff", target, name, mime, buffer: buf,
+          }, "*", [buf]);
+          status("Sent “" + name + "” to " + (target === "media" ? "Converter" : target) + ".");
+        } catch (e) { status("Handoff failed: " + e.message); }
+      });
+    }
+
+    // incoming handoff from the Extract tab (relayed by parent)
+    window.addEventListener("message", (ev) => {
+      const d = ev.data;
+      if (!d || d.type !== "tf-load" || !d.buffer) return;
+      const blob = new Blob([d.buffer], { type: d.mime || "application/octet-stream" });
+      loadBlob(blob, d.name || "audio");
+    });
+
+    // announce readiness so the parent can deliver a queued handoff
+    function announce() { try { window.parent.postMessage({ type: "tool-ready", tool: "transformer" }, "*"); } catch (e) {} }
+    renderChain();
+    announce();
+    log("Transform ready.");
+  })();
+  </script>
+</body>
+</html>

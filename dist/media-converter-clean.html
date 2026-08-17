@@ -1,0 +1,784 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <link rel="stylesheet" href="./modern.css?v=7" />
+  <meta charset="utf-8" />
+  <title>Media Converter (XP.css)</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+
+  <!-- Windows XP UI style -->
+  <style>
+    /* Unified font (matches the shared activity log) */
+    body, .app, .app * {
+      font-family: "JetBrains Mono", "SF Mono", ui-monospace, "Menlo", monospace !important;
+      -webkit-font-smoothing: antialiased;
+      font-size: 14px;
+    }
+
+    body { margin: 16px; }
+
+    :root{
+  --c-title: #dffcff;      /* title bar text (bright) */*/
+  --c-heading: #a8fff6;    /* section titles */
+  --c-body: #07f0e8;       /* normal readable body text */
+  --c-muted: rgba(7,16,22,.75);
+  --c-status: #00f5e1;     /* status line accent */
+  --c-log: #b9fff7;        /* log text */
+  --c-log-dim: rgba(185,255,247,.75);
+}
+
+    .app { max-width: 980px; margin: 0 auto; }
+
+    .section-title {
+      font-size: 0.9rem;
+      font-weight: 700;
+      margin: 12px 0 6px;
+      text-transform: uppercase;
+      letter-spacing: 0.06em;
+    }
+
+    .subtitle { margin: 6px 0 10px; font-size: 0.9rem; }
+    .hint { font-size: 0.8rem; margin: 4px 0; }
+    .small { font-size: 0.8rem; }
+    .muted { opacity: 0.85; }
+
+    .two-column {
+      display: grid;
+      grid-template-columns: minmax(0, 1.1fr) minmax(0, 1fr);
+      gap: 16px;
+    }
+    @media (max-width: 720px) { .two-column { grid-template-columns: 1fr; } }
+
+    .drop-zone {
+      border: 2px dashed #808080;
+      background: #ffffff;
+      padding: 12px;
+      text-align: center;
+      cursor: pointer;
+      font-size: 0.85rem;
+      margin-bottom: 8px;
+      position: relative;
+    }
+    .drop-zone--hover { background: #cce4ff; }
+    .drop-zone input[type="file"] { display:none; }
+
+    .badge {
+      display: inline-block;
+      padding: 2px 6px;
+      border: 1px solid #808080;
+      background: #d4d0c8;
+      font-size: 0.7rem;
+      text-transform: uppercase;
+      letter-spacing: 0.08em;
+      margin-right: 4px;
+    }
+
+    /* Log window styling (XP-ish) */
+    #log {
+  position: relative;
+  overflow: hidden;
+
+  /* Softer, milkier tint (less “panel”, more glass) */
+  background:
+    linear-gradient(
+      rgba(220,245,245,0.32),
+      rgba(180,230,230,0.18)
+    );
+
+  /* Stronger blur + saturation = iOS liquid feel */
+  backdrop-filter: blur(22px) saturate(180%);
+  -webkit-backdrop-filter: blur(22px) saturate(180%);
+
+  /* Apple glass does NOT use hard borders */
+  border: none;
+
+  color: var(--c-log);
+  padding: 10px 12px;
+  height: 220px;
+  overflow-y: auto;
+
+  /* Unified font (matches the shared activity log) */
+  font-family: "JetBrains Mono", "SF Mono", ui-monospace, "Menlo", monospace !important;
+  font-size: 0.8rem;
+  white-space: pre-wrap;
+  margin-top: 8px;
+
+  /* Liquid depth via light, not heavy shadows */
+  box-shadow:
+    inset 0 1px 0 rgba(255,255,255,0.55),
+    inset 0 -1px 0 rgba(255,255,255,0.12),
+    0 14px 32px rgba(0,0,0,0.22);
+
+  border-radius: 14px;
+}
+    
+    #log::after {
+  content: "";
+  position: absolute;
+  inset: -40%;
+  pointer-events: none;
+
+  background:
+    radial-gradient(
+      circle at top left,
+      rgba(255,255,255,0.45),
+      transparent 55%
+    );
+
+  opacity: 0.6;
+}
+
+    @keyframes iosGlassFloat {
+  0%   { transform: translateY(0); }
+  50%  { transform: translateY(-6px); }
+  100% { transform: translateY(0); }
+}
+
+#log::after {
+  animation: iosGlassFloat 18s ease-in-out infinite;
+}
+
+    .field-row { margin-bottom: 8px; }
+    .row { display:flex; gap:10px; flex-wrap:wrap; align-items:center; }
+    .row > * { flex: 1 1 auto; }
+
+    input[type="text"], input[type="number"], select {
+      min-width: 220px;
+    }
+
+    .disabled {
+      opacity: 0.55;
+      pointer-events: none;
+      filter: grayscale(0.15);
+    }
+
+    /* ================================
+       ✅ KEY FIX: background INSIDE the XP window
+       Put the image on .window-body (the pseudo page),
+       not on <body>.
+       ================================ */
+
+    :root{
+      /* Use RAW github URL (not /blob/) */
+      --xp-bg-img: url("https://raw.githubusercontent.com/MingjiWang/browser-media-converter/main/1%20(68).png");
+    }
+
+    /* Window background is now the unified dotted gradient from
+       modern.css - no per-tab image override. */
+.window{
+  position: relative;
+}
+
+    /* 2) Remove the default body inset look that causes the gap */
+.window-body{
+  background: transparent !important;
+  margin: 0 !important;
+  border: 0 !important;
+  padding: 12px; /* keep your spacing */
+}
+
+    /* Readability layer: a light “sheet” over the image, inside the window */
+    .window-body::before{
+      content:"";
+      position:absolute;
+      inset:0;
+      background: rgba(255,255,255,0.01); /* raise/lower for readability */
+      /* subtle XP-ish dithery feel */
+      backdrop-filter: blur(0.5px);
+      z-index:0;
+      pointer-events:none;
+    }
+
+    /* Put all window content above overlay */
+    .window-body > *{
+      position: relative;
+      z-index: 1;
+    }
+
+    /* Optional: make separators more visible on image */
+    hr{
+      border: 0;
+      border-top: 1px solid rgba(128,128,128,0.9);
+      margin: 12px 0;
+    }
+
+    /* Optional: slightly stronger badges/boxes over busy image */
+    .drop-zone, #log{
+      box-shadow: 0 0 0 1px rgba(255,255,255,0.35) inset;
+    }
+
+    /* Advanced descriptions styling */
+    .desc{
+      font-size: 0.78rem;
+      opacity: 0.9;
+      margin-top: 4px;
+      line-height: 1.25;
+    }
+    .helpbox{
+      border: 1px solid #808080;
+      background: #fff;
+      padding: 8px 10px;
+      margin-top: 8px;
+      font-size: 0.8rem;
+    }
+
+    /* Title bar text color */
+.title-bar-text{
+  color: var(--c-title) !important;
+  text-shadow: 1px 1px 0 rgba(0,0,0,.35);
+}
+
+/* Section headers */
+.section-title{
+  color: var(--c-heading) !important;
+  text-shadow: 0 1px 0 rgba(0,0,0,.25);
+}
+
+/* Default text inside the XP window */
+.window-body{
+  color: var(--c-body);
+}
+
+/* Status line */
+#status{
+  color: var(--c-status) !important;
+  font-weight: 700;
+}
+
+  .two-column{
+  color: var(--c-body);
+}
+  </style>
+</head>
+
+<body>
+  <div class="app">
+    <div class="window">
+      <div class="title-bar">
+        <div class="title-bar-text">Browser Media Converter (FFmpeg.wasm)</div>
+        <div class="title-bar-controls">
+          <button aria-label="Minimize"></button>
+          <button aria-label="Maximize"></button>
+          <button aria-label="Close"></button>
+        </div>
+      </div>
+
+      <div class="window-body">
+        <div class="section-title">0. Engine</div>
+        <div class="field-row">
+          <div class="row">
+            <button id="initBtn">Load Engine</button>
+            <button id="clearBtn">Clear Log</button>
+            <span class="small muted" id="status">Idle.</span>
+          </div>
+        </div>
+
+        <div class="section-title">Log</div>
+        <pre id="log"></pre>
+
+        <hr />
+
+        <div id="ui" class="disabled">
+          <div class="section-title">1. Load File</div>
+          <div class="drop-zone" id="dropZone">
+            <strong>Drop file here</strong><br />
+            or click to choose a file.
+            <div class="small muted" id="fileLabel" style="margin-top:6px;"></div>
+            <input type="file" id="fileInput" />
+          </div>
+
+          <div class="section-title">2. Output</div>
+
+          <div class="field-row">
+            <label class="small"><b>Format</b></label><br/>
+            <select id="format">
+              <optgroup label="Audio (recommended)">
+                <option value="mp3">MP3</option>
+                <option value="m4a">M4A (AAC)</option>
+                <option value="aac">AAC</option>
+                <option value="wav">WAV (PCM)</option>
+                <option value="flac">FLAC</option>
+                <option value="aiff">AIFF (PCM)</option>
+                <option value="ogg">Ogg Vorbis (if available)</option>
+                <option value="opus">Opus (if available)</option>
+              </optgroup>
+              <optgroup label="Video (recommended)">
+                <option value="mp4">MP4</option>
+                <option value="mov">MOV</option>
+                <option value="webm">WebM</option>
+                <option value="gif">GIF</option>
+              </optgroup>
+              <optgroup label="Experimental (may fail)">
+                <option value="avi">AVI</option>
+                <option value="mkv">MKV</option>
+                <option value="flv">FLV</option>
+                <option value="wmv">WMV</option>
+                <option value="m2ts">AVCHD/M2TS</option>
+              </optgroup>
+            </select>
+            <div class="small muted" id="formatNote" style="margin-top:6px;"></div>
+          </div>
+
+          <div class="field-row">
+            <label class="small"><b>Output naming</b></label>
+            <div class="row">
+              <select id="nameMode" style="min-width:160px;">
+                <option value="auto" selected>Auto</option>
+                <option value="custom">Custom</option>
+              </select>
+              <input id="customName" type="text" placeholder="custom base name (no extension)" disabled />
+            </div>
+            <div class="desc">
+              <b>Auto</b>: <code>originalName_to_ext.ext</code> • <b>Custom</b>: you enter a base name (extension is added automatically).
+            </div>
+          </div>
+
+          <div class="field-row">
+            <label class="small"><b>Quality preset</b></label><br/>
+            <select id="preset">
+              <option value="standard">Standard</option>
+              <option value="high">High</option>
+              <option value="custom">Custom (advanced)</option>
+            </select>
+            <div class="desc">
+              <b>High</b> uses sensible defaults (e.g. 320k + 48kHz for audio, ~60fps for video). Use <b>Custom</b> to override.
+            </div>
+          </div>
+
+          <details id="advanced" class="field-row">
+            <summary class="small"><b>Advanced controls</b></summary>
+
+            <div class="helpbox">
+              Leave a field blank to <b>keep source / default</b>. Some encoders might not exist in wasm builds (then ffmpeg will error in the log).
+            </div>
+
+            <div class="section-title">Audio</div>
+            <div class="row">
+              <div>
+                <div class="small">Bitrate (kbps)</div>
+                <input id="ab" type="number" min="8" step="1" placeholder="e.g. 320" />
+                <div class="desc">Controls compression quality for MP3/AAC/Opus/Vorbis. Higher = bigger file.</div>
+              </div>
+              <div>
+                <div class="small">Sample rate (Hz)</div>
+                <input id="ar" type="number" min="8000" step="100" placeholder="e.g. 48000" />
+                <div class="desc">Resamples audio. Common: 44100 (music), 48000 (video).</div>
+              </div>
+              <div>
+                <div class="small">Channels</div>
+                <select id="ac">
+                  <option value="">(keep)</option>
+                  <option value="1">Mono</option>
+                  <option value="2">Stereo</option>
+                </select>
+                <div class="desc">Downmix or force stereo. Mono reduces size.</div>
+              </div>
+            </div>
+
+            <div class="section-title">Video</div>
+            <div class="row">
+              <div>
+                <div class="small">FPS</div>
+                <input id="vfps" type="number" min="1" step="1" placeholder="e.g. 60" />
+                <div class="desc">Frame rate. Higher = smoother but heavier.</div>
+              </div>
+              <div>
+                <div class="small">Scale (w:-1)</div>
+                <input id="vscale" type="text" placeholder="e.g. 1280:-1" />
+                <div class="desc">Resize video. Use <code>-1</code> to keep aspect ratio.</div>
+              </div>
+              <div>
+                <div class="small">Codec</div>
+                <select id="vcodec">
+                  <option value="">(auto)</option>
+                  <option value="libx264">H.264 (libx264)</option>
+                  <option value="libvpx-vp9">VP9</option>
+                  <option value="libvpx">VP8</option>
+                  <option value="mpeg4">MPEG-4</option>
+                </select>
+                <div class="desc">Chooses video encoder. Availability depends on the wasm build.</div>
+              </div>
+              <div>
+                <div class="small">CRF</div>
+                <input id="crf" type="number" min="0" max="51" step="1" placeholder="e.g. 23" />
+                <div class="desc">Quality knob (mainly H.264/VP9). Lower = better quality, bigger file. Typical: 18–28.</div>
+              </div>
+            </div>
+
+            <div class="section-title">GIF</div>
+            <div class="row">
+              <div>
+                <div class="small">GIF FPS</div>
+                <input id="gfps" type="number" min="1" step="1" placeholder="e.g. 20" />
+                <div class="desc">Controls animation smoothness vs file size.</div>
+              </div>
+              <div>
+                <div class="small">GIF scale (w:-1)</div>
+                <input id="gscale" type="text" placeholder="e.g. 640:-1" />
+                <div class="desc">Downscale GIFs to avoid huge outputs.</div>
+              </div>
+            </div>
+          </details>
+
+          <div class="section-title">3. Convert</div>
+          <div class="field-row row">
+            <button id="convertBtn" disabled>Convert</button>
+            <a id="dl" class="small" style="display:none;" href="#">Download result</a>
+          </div>
+        </div>
+
+        <div class="status-bar">
+          <p class="status-bar-field" id="sb1">Engine: not loaded</p>
+          <p class="status-bar-field" id="sb2">Worker: same-origin required</p>
+          <p class="status-bar-field" id="sb3">Mode: browser-only</p>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <script type="module">
+    // IMPORTANT: dynamic imports so the module doesn't fail to parse
+    const BUILD = "20260110_xp_bg_windowbody_01";
+
+    const el = (id) => document.getElementById(id);
+    const logEl = el("log");
+    const statusEl = el("status");
+
+    function ts(){ return new Date().toLocaleTimeString(); }
+    function log(msg){
+      logEl.textContent += `[${ts()}] ${msg}\n`;
+      logEl.scrollTop = logEl.scrollHeight;
+      console.log(msg);
+    }
+    function status(msg){
+      statusEl.textContent = msg;
+      log(`STATUS → ${msg}`);
+    }
+
+    window.addEventListener("error", (e) => log(`❌ window.error: ${e.message} @ ${e.filename || ""}:${e.lineno || ""}`));
+    window.addEventListener("unhandledrejection", (e) => log(`❌ unhandledrejection: ${e.reason?.message || e.reason}`));
+
+    log(`✅ module started (BUILD=${BUILD})`);
+
+    (function patchWorker(){
+      const NativeWorker = window.Worker;
+      if (!NativeWorker || NativeWorker.__ffdbg__) return;
+      function DebugWorker(spec, opts){
+        log(`🧵 Worker created → ${String(spec)} opts=${opts ? JSON.stringify(opts) : "(none)"}`);
+        const w = new NativeWorker(spec, opts);
+        w.addEventListener("error", (e) => log(`❌ Worker error: ${e.message || "error"} @ ${e.filename || ""}:${e.lineno || ""}`));
+        let c = 0;
+        w.addEventListener("message", (ev) => {
+          c++;
+          if (c <= 5){
+            let preview;
+            try { preview = JSON.stringify(ev.data); } catch { preview = String(ev.data); }
+            log(`🧵 Worker message[${c}] → ${preview.slice(0, 400)}`);
+          }
+        });
+        return w;
+      }
+      DebugWorker.prototype = NativeWorker.prototype;
+      DebugWorker.__ffdbg__ = true;
+      window.Worker = DebugWorker;
+      log("✅ patched Worker for debug");
+    })();
+
+    const ui = el("ui");
+    const initBtn = el("initBtn");
+    const clearBtn = el("clearBtn");
+    const dropZone = el("dropZone");
+    const fileInput = el("fileInput");
+    const fileLabel = el("fileLabel");
+    const formatSel = el("format");
+    const formatNote = el("formatNote");
+    const presetSel = el("preset");
+    const advanced = el("advanced");
+    const nameMode = el("nameMode");
+    const customName = el("customName");
+    const convertBtn = el("convertBtn");
+    const dl = el("dl");
+
+    const sb1 = el("sb1");
+    const sb2 = el("sb2");
+    const sb3 = el("sb3");
+
+    clearBtn.addEventListener("click", () => {
+      logEl.textContent = "";
+      log(`Logs cleared (BUILD=${BUILD})`);
+    });
+
+    function syncNameUI(){
+      const isCustom = nameMode.value === "custom";
+      customName.disabled = !isCustom;
+    }
+    nameMode.addEventListener("change", syncNameUI);
+    syncNameUI();
+
+    presetSel.addEventListener("change", () => {
+      if (presetSel.value === "custom") advanced.open = true;
+    });
+
+    const FORMAT_META = {
+      mp3:["ok","MP3 output."],
+      m4a:["ok","M4A container (AAC)."],
+      aac:["ok","AAC output."],
+      wav:["ok","WAV PCM (forced pcm_s16le)."],
+      flac:["ok","Lossless FLAC."],
+      aiff:["ok","AIFF PCM (forced pcm_s16be)."],
+      ogg:["ok","Ogg Vorbis (encoder may be missing)."],
+      opus:["ok","Opus (encoder may be missing)."],
+      mp4:["ok","MP4 container (best compatibility)."],
+      mov:["ok","MOV container."],
+      webm:["ok","WebM container."],
+      gif:["ok","GIF."],
+      avi:["exp","AVI (may fail). Try codec=mpeg4 if needed."],
+      mkv:["exp","MKV (may fail)."],
+      flv:["exp","FLV (may fail)."],
+      wmv:["exp","WMV often fails in wasm builds."],
+      m2ts:["exp","AVCHD/M2TS likely to fail."],
+    };
+
+    function updateFormatNote(){
+      const ext = formatSel.value;
+      const meta = FORMAT_META[ext];
+      if (!meta) { formatNote.textContent = ""; return; }
+      const [tier, note] = meta;
+      formatNote.textContent = (tier === "exp" ? "⚠️ " : "") + note;
+      if (tier === "exp") log(`⚠️ selected experimental format: ${ext}`);
+    }
+    formatSel.addEventListener("change", updateFormatNote);
+    updateFormatNote();
+
+    function safeBaseName(name){
+      const noExt = (name || "input").replace(/\.[^.]+$/, "");
+      return noExt.replace(/[^\w\- ]+/g, "").trim().replace(/\s+/g, "_") || "converted";
+    }
+    function buildDownloadName(originalName, outExt){
+      if (nameMode.value === "custom"){
+        const base = (customName.value || "").trim().replace(/[^\w\- ]+/g, "").trim().replace(/\s+/g, "_");
+        return `${base || "converted"}.${outExt}`;
+      }
+      const base = safeBaseName(originalName);
+      return `${base}_to_${outExt}.${outExt}`;
+    }
+
+    function mimeFor(ext){
+      return ({
+        mp3:"audio/mpeg", m4a:"audio/mp4", aac:"audio/aac", wav:"audio/wav",
+        flac:"audio/flac", aiff:"audio/aiff", ogg:"audio/ogg", opus:"audio/ogg",
+        mp4:"video/mp4", mov:"video/quicktime", webm:"video/webm", gif:"image/gif",
+        avi:"video/x-msvideo", mkv:"video/x-matroska", flv:"video/x-flv", wmv:"video/x-ms-wmv", m2ts:"video/mp2t",
+      }[ext] || "application/octet-stream");
+    }
+
+    function withTimeout(promise, ms, label){
+      let t;
+      const timeout = new Promise((_, rej) => t = setTimeout(() => rej(new Error(`${label} timed out after ${ms}ms`)), ms));
+      return Promise.race([promise, timeout]).finally(() => clearTimeout(t));
+    }
+
+    async function assertFetchable(url, label, minBytes){
+      status(`Checking ${label}…`);
+      log(`${label} url = ${url}`);
+      const resp = await fetch(url, { cache:"no-store" });
+      const buf = await resp.arrayBuffer();
+      log(`${label} HTTP ${resp.status}`);
+      log(`${label} bytes=${buf.byteLength}`);
+      if (!resp.ok) throw new Error(`${label} fetch failed: HTTP ${resp.status}`);
+      if (buf.byteLength < minBytes) throw new Error(`${label} too small: ${buf.byteLength} bytes`);
+    }
+
+    let FFmpegMod = null;
+    let ffmpeg = null;
+    let fetchFile = null;
+    let engineLoaded = false;
+    let currentFile = null;
+
+    function addIf(args, cond, ...parts){ if (cond) args.push(...parts); }
+
+    function collectArgs(outExt, preset){
+      const args = [];
+      const isAudio = ["mp3","m4a","aac","wav","flac","aiff","ogg","opus"].includes(outExt);
+      const isVideo = ["mp4","mov","webm","avi","mkv","flv","wmv","m2ts"].includes(outExt);
+      const isGif = outExt === "gif";
+      const custom = preset === "custom";
+
+      const ab = Number(el("ab").value || NaN);
+      const ar = Number(el("ar").value || NaN);
+      const ac = el("ac").value;
+
+      const vfps = Number(el("vfps").value || NaN);
+      const vscale = (el("vscale").value || "").trim();
+      const vcodec = (el("vcodec").value || "").trim();
+      const crf = Number(el("crf").value || NaN);
+
+      const gfps = Number(el("gfps").value || NaN);
+      const gscale = (el("gscale").value || "").trim();
+
+      if (isAudio){
+        args.push("-vn");
+
+        if (outExt === "wav") addIf(args, true, "-c:a", "pcm_s16le");
+        if (outExt === "aiff") addIf(args, true, "-c:a", "pcm_s16be");
+
+        if (outExt === "mp3") addIf(args, true, "-c:a", "libmp3lame");
+        if (outExt === "ogg") addIf(args, true, "-c:a", "libvorbis");
+        if (outExt === "opus") addIf(args, true, "-c:a", "libopus");
+        if (outExt === "m4a" || outExt === "aac") addIf(args, true, "-c:a", "aac");
+
+        if (preset === "high"){
+          addIf(args, ["mp3","m4a","aac","ogg","opus"].includes(outExt), "-b:a", "320k");
+          addIf(args, true, "-ar", "48000");
+        } else if (custom){
+          addIf(args, Number.isFinite(ab) && ab > 0, "-b:a", `${ab}k`);
+          addIf(args, Number.isFinite(ar) && ar > 0, "-ar", `${ar}`);
+          addIf(args, ac === "1" || ac === "2", "-ac", ac);
+        }
+      }
+
+      if (isVideo){
+        if (preset === "high") addIf(args, true, "-r", "60");
+        if (custom){
+          addIf(args, Number.isFinite(vfps) && vfps > 0, "-r", `${vfps}`);
+          addIf(args, vscale.length > 0, "-vf", `scale=${vscale}`);
+          addIf(args, vcodec.length > 0, "-c:v", vcodec);
+          addIf(args, Number.isFinite(crf), "-crf", `${crf}`);
+        }
+      }
+
+      if (isGif){
+        if (preset === "high") addIf(args, true, "-r", "24");
+        if (custom){
+          addIf(args, Number.isFinite(gfps) && gfps > 0, "-r", `${gfps}`);
+          addIf(args, gscale.length > 0, "-vf", `scale=${gscale}`);
+        }
+      }
+
+      return args;
+    }
+
+    dropZone.addEventListener("click", () => fileInput.click());
+    dropZone.addEventListener("dragover", (e) => { e.preventDefault(); dropZone.classList.add("drop-zone--hover"); });
+    dropZone.addEventListener("dragleave", (e) => { e.preventDefault(); dropZone.classList.remove("drop-zone--hover"); });
+    dropZone.addEventListener("drop", (e) => {
+      e.preventDefault();
+      dropZone.classList.remove("drop-zone--hover");
+      const f = e.dataTransfer.files?.[0];
+      if (!f) return;
+      fileInput.files = e.dataTransfer.files;
+      fileInput.dispatchEvent(new Event("change"));
+    });
+
+    fileInput.addEventListener("change", () => {
+      currentFile = fileInput.files?.[0] || null;
+      fileLabel.textContent = currentFile ? `Loaded: ${currentFile.name}` : "";
+      convertBtn.disabled = !(engineLoaded && currentFile);
+    });
+
+    initBtn.addEventListener("click", async () => {
+      log("▶ Load Engine clicked");
+
+      try {
+        initBtn.disabled = true;
+        convertBtn.disabled = true;
+        dl.style.display = "none";
+        engineLoaded = false;
+
+        status("Importing FFmpeg modules…");
+
+        const ff = await import("https://unpkg.com/@ffmpeg/ffmpeg@0.12.10/dist/esm/index.js");
+        const util = await import("https://unpkg.com/@ffmpeg/util@0.12.1/dist/esm/index.js");
+        FFmpegMod = ff;
+        fetchFile = util.fetchFile;
+
+        status("Creating FFmpeg instance…");
+        ffmpeg = new FFmpegMod.FFmpeg();
+
+        ffmpeg.on("log", ({ message }) => log(`ffmpeg> ${message}`));
+        ffmpeg.on("progress", ({ progress }) => status(`Processing: ${Math.round(progress * 100)}%`));
+
+        const base = "https://cdn.jsdelivr.net/npm/@ffmpeg/core@0.12.10/dist/esm";
+        const coreURL = `${base}/ffmpeg-core.js`;
+        const wasmURL = `${base}/ffmpeg-core.wasm`;
+
+        const classWorkerURL = new URL(`./worker.js?v=${BUILD}`, import.meta.url).toString();
+        const constURL = new URL(`./const.js?v=${BUILD}`, import.meta.url).toString();
+        const errorsURL = new URL(`./errors.js?v=${BUILD}`, import.meta.url).toString();
+
+        await assertFetchable(classWorkerURL, "worker.js (local)", 1000);
+        await assertFetchable(constURL, "const.js (local)", 200);
+        await assertFetchable(errorsURL, "errors.js (local)", 200);
+        await assertFetchable(coreURL, "ffmpeg-core.js (CDN)", 50000);
+        await assertFetchable(wasmURL, "ffmpeg-core.wasm (CDN)", 5000000);
+
+        status("Calling ffmpeg.load()…");
+        await withTimeout(ffmpeg.load({ coreURL, wasmURL, classWorkerURL }), 120000, "ffmpeg.load()");
+
+        engineLoaded = true;
+        status("Engine ready.");
+        ui.classList.remove("disabled");
+        convertBtn.disabled = !currentFile;
+
+        sb1.textContent = "Engine: loaded";
+        sb2.textContent = "Worker: OK";
+        sb3.textContent = "Mode: browser-only";
+        log("✅ engine loaded");
+      } catch (err) {
+        log(`❌ load failed: ${err?.message || String(err)}`);
+        status("Load failed (see log).");
+        initBtn.disabled = false;
+        alert("Engine failed to load. Check the log for the exact error.");
+      }
+    });
+
+    convertBtn.addEventListener("click", async () => {
+      if (!engineLoaded || !currentFile) return;
+
+      convertBtn.disabled = true;
+      dl.style.display = "none";
+
+      const outExt = formatSel.value;
+      const preset = presetSel.value;
+      const inputName = `input_${Date.now()}`;
+      const outputName = `output_${Date.now()}.${outExt}`;
+
+      try {
+        status("Writing input…");
+        await ffmpeg.writeFile(inputName, await fetchFile(currentFile));
+
+        const args = ["-i", inputName, ...collectArgs(outExt, preset), outputName];
+        log("Exec: " + args.join(" "));
+        status("Converting…");
+        await ffmpeg.exec(args);
+
+        status("Reading output…");
+        const data = await ffmpeg.readFile(outputName);
+
+        const blob = new Blob([data.buffer], { type: mimeFor(outExt) });
+        const url = URL.createObjectURL(blob);
+
+        const dlName = buildDownloadName(currentFile.name, outExt);
+        dl.href = url;
+        dl.download = dlName;
+        dl.textContent = `Download: ${dlName}`;
+        dl.style.display = "inline-block";
+
+        status("Done.");
+      } catch (err) {
+        log(`❌ convert failed: ${err?.message || String(err)}`);
+        status("Convert failed (see log).");
+        alert("Conversion failed. Check the log.");
+      } finally {
+        try { await ffmpeg.deleteFile(inputName); } catch {}
+        try { await ffmpeg.deleteFile(outputName); } catch {}
+        convertBtn.disabled = false;
+      }
+    });
+
+    log("UI ready. Click 'Load Engine'.");
+  </script>
+  <script src="./logger-bridge.js?v=7"></script>
+  <script src="./liquid.js?v=7"></script>
+</body>
+</html>

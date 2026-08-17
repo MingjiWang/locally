@@ -1,0 +1,951 @@
+<!DOCTYPE html PUBLIC "-//W3C//DTD HTML 4.01//EN" "http://www.w3.org/TR/html4/strict.dtd">
+<html>
+<head>
+  <meta http-equiv="Content-Type" content="text/html; charset=utf-8">
+  <meta http-equiv="Content-Style-Type" content="text/css">
+  <title></title>
+  <meta name="Generator" content="Cocoa HTML Writer">
+  <meta name="CocoaVersion" content="2487.3">
+  <style type="text/css">
+    p.p1 {margin: 0.0px 0.0px 0.0px 0.0px; font: 12.0px Helvetica}
+    p.p2 {margin: 0.0px 0.0px 0.0px 0.0px; font: 12.0px Helvetica; min-height: 14.0px}
+  </style>
+</head>
+<body>
+<p class="p1">&lt;!doctype html&gt;</p>
+<p class="p1">&lt;!--</p>
+<p class="p1">MIT License</p>
+<p class="p2"><br></p>
+<p class="p1">Copyright (c) 2025 Mingji Wang</p>
+<p class="p2"><br></p>
+<p class="p1">Permission is hereby granted, free of charge, to any person obtaining a copy</p>
+<p class="p1">of this software and associated documentation files (the "Software"), to deal</p>
+<p class="p1">in the Software without restriction, including without limitation the rights</p>
+<p class="p1">to use, copy, modify, merge, publish, distribute, sublicense, and/or sell</p>
+<p class="p1">copies of the Software, and to permit persons to whom the Software is</p>
+<p class="p1">furnished to do so, subject to the following conditions:</p>
+<p class="p2"><br></p>
+<p class="p1">The above copyright notice and this permission notice shall be included in all</p>
+<p class="p1">copies or substantial portions of the Software.</p>
+<p class="p2"><br></p>
+<p class="p1">THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR</p>
+<p class="p1">IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,</p>
+<p class="p1">FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE</p>
+<p class="p1">AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER</p>
+<p class="p1">LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,</p>
+<p class="p1">OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE</p>
+<p class="p1">SOFTWARE.</p>
+<p class="p1">--&gt;</p>
+<p class="p1">&lt;html lang="en"&gt;</p>
+<p class="p1"><span class="Apple-converted-space">  </span>&lt;head&gt;</p>
+<p class="p1"><span class="Apple-converted-space">    </span>&lt;meta charset="utf-8" /&gt;</p>
+<p class="p1"><span class="Apple-converted-space">    </span>&lt;title&gt;Piano Transcription (Kong et al. 2020, Browser Demo)&lt;/title&gt;</p>
+<p class="p1"><span class="Apple-converted-space">    </span>&lt;meta name="viewport" content="width=device-width, initial-scale=1.0" /&gt;</p>
+<p class="p2"><span class="Apple-converted-space">    </span></p>
+<p class="p1"><span class="Apple-converted-space">    </span>&lt;!-- Windows XP UI style --&gt;</p>
+<p class="p1"><span class="Apple-converted-space">    </span>&lt;link rel="stylesheet" href="https://unpkg.com/xp.css" /&gt;</p>
+<p class="p2"><span class="Apple-converted-space">    </span></p>
+<p class="p1"><span class="Apple-converted-space">    </span>&lt;style&gt;</p>
+<p class="p1"><span class="Apple-converted-space">      </span>/* XP pixel font override, same as your other work */</p>
+<p class="p1"><span class="Apple-converted-space">      </span>body,</p>
+<p class="p1"><span class="Apple-converted-space">      </span>.app,</p>
+<p class="p1"><span class="Apple-converted-space">      </span>.app * {</p>
+<p class="p1"><span class="Apple-converted-space">        </span>font-family: "Pixelated MS Sans Serif", "MS Sans Serif", Arial, sans-serif !important;</p>
+<p class="p1"><span class="Apple-converted-space">        </span>-webkit-font-smoothing: none;</p>
+<p class="p1"><span class="Apple-converted-space">        </span>font-size: 15px;</p>
+<p class="p1"><span class="Apple-converted-space">      </span>}</p>
+<p class="p2"><br></p>
+<p class="p1"><span class="Apple-converted-space">      </span>body {</p>
+<p class="p1"><span class="Apple-converted-space">        </span>margin: 16px;</p>
+<p class="p1"><span class="Apple-converted-space">      </span>}</p>
+<p class="p2"><br></p>
+<p class="p1"><span class="Apple-converted-space">      </span>.app {</p>
+<p class="p1"><span class="Apple-converted-space">        </span>max-width: 880px;</p>
+<p class="p1"><span class="Apple-converted-space">        </span>margin: 0 auto;</p>
+<p class="p1"><span class="Apple-converted-space">      </span>}</p>
+<p class="p2"><br></p>
+<p class="p1"><span class="Apple-converted-space">      </span>.window-body {</p>
+<p class="p1"><span class="Apple-converted-space">        </span>font-size: 13px;</p>
+<p class="p1"><span class="Apple-converted-space">      </span>}</p>
+<p class="p2"><br></p>
+<p class="p1"><span class="Apple-converted-space">      </span>.section-title {</p>
+<p class="p1"><span class="Apple-converted-space">        </span>font-size: 0.9rem;</p>
+<p class="p1"><span class="Apple-converted-space">        </span>font-weight: 700;</p>
+<p class="p1"><span class="Apple-converted-space">        </span>margin: 12px 0 4px;</p>
+<p class="p1"><span class="Apple-converted-space">        </span>text-transform: uppercase;</p>
+<p class="p1"><span class="Apple-converted-space">        </span>letter-spacing: 0.06em;</p>
+<p class="p1"><span class="Apple-converted-space">      </span>}</p>
+<p class="p2"><br></p>
+<p class="p1"><span class="Apple-converted-space">      </span>.subtitle {</p>
+<p class="p1"><span class="Apple-converted-space">        </span>margin: 6px 0 10px;</p>
+<p class="p1"><span class="Apple-converted-space">        </span>font-size: 0.9rem;</p>
+<p class="p1"><span class="Apple-converted-space">      </span>}</p>
+<p class="p2"><br></p>
+<p class="p1"><span class="Apple-converted-space">      </span>.hint {</p>
+<p class="p1"><span class="Apple-converted-space">        </span>font-size: 0.8rem;</p>
+<p class="p1"><span class="Apple-converted-space">        </span>margin: 4px 0;</p>
+<p class="p1"><span class="Apple-converted-space">      </span>}</p>
+<p class="p2"><br></p>
+<p class="p1"><span class="Apple-converted-space">      </span>.field-row {</p>
+<p class="p1"><span class="Apple-converted-space">        </span>margin-bottom: 6px;</p>
+<p class="p1"><span class="Apple-converted-space">      </span>}</p>
+<p class="p2"><br></p>
+<p class="p1"><span class="Apple-converted-space">      </span>.drop-zone {</p>
+<p class="p1"><span class="Apple-converted-space">        </span>border: 2px dashed #808080;</p>
+<p class="p1"><span class="Apple-converted-space">        </span>background: #ffffff;</p>
+<p class="p1"><span class="Apple-converted-space">        </span>padding: 10px;</p>
+<p class="p1"><span class="Apple-converted-space">        </span>text-align: center;</p>
+<p class="p1"><span class="Apple-converted-space">        </span>cursor: pointer;</p>
+<p class="p1"><span class="Apple-converted-space">        </span>font-size: 0.85rem;</p>
+<p class="p1"><span class="Apple-converted-space">        </span>margin-bottom: 6px;</p>
+<p class="p1"><span class="Apple-converted-space">      </span>}</p>
+<p class="p2"><br></p>
+<p class="p1"><span class="Apple-converted-space">      </span>.drop-zone--hover {</p>
+<p class="p1"><span class="Apple-converted-space">        </span>background: #cce4ff;</p>
+<p class="p1"><span class="Apple-converted-space">      </span>}</p>
+<p class="p2"><br></p>
+<p class="p1"><span class="Apple-converted-space">      </span>#log {</p>
+<p class="p1"><span class="Apple-converted-space">        </span>background: #000000;</p>
+<p class="p1"><span class="Apple-converted-space">        </span>color: #e2e8f0;</p>
+<p class="p1"><span class="Apple-converted-space">        </span>padding: 6px 8px;</p>
+<p class="p1"><span class="Apple-converted-space">        </span>border-radius: 0;</p>
+<p class="p1"><span class="Apple-converted-space">        </span>border: 1px solid #808080;</p>
+<p class="p1"><span class="Apple-converted-space">        </span>height: 200px;</p>
+<p class="p1"><span class="Apple-converted-space">        </span>overflow-y: auto;</p>
+<p class="p1"><span class="Apple-converted-space">        </span>font-family: monospace;</p>
+<p class="p1"><span class="Apple-converted-space">        </span>font-size: 0.8rem;</p>
+<p class="p1"><span class="Apple-converted-space">        </span>white-space: pre-wrap;</p>
+<p class="p1"><span class="Apple-converted-space">        </span>margin-top: 8px;</p>
+<p class="p1"><span class="Apple-converted-space">      </span>}</p>
+<p class="p2"><br></p>
+<p class="p1"><span class="Apple-converted-space">      </span>#progress {</p>
+<p class="p1"><span class="Apple-converted-space">        </span>width: 100%;</p>
+<p class="p1"><span class="Apple-converted-space">        </span>margin-top: 6px;</p>
+<p class="p1"><span class="Apple-converted-space">        </span>display: none;</p>
+<p class="p1"><span class="Apple-converted-space">      </span>}</p>
+<p class="p2"><br></p>
+<p class="p1"><span class="Apple-converted-space">      </span>.two-column {</p>
+<p class="p1"><span class="Apple-converted-space">        </span>display: grid;</p>
+<p class="p1"><span class="Apple-converted-space">        </span>grid-template-columns: minmax(0, 1.1fr) minmax(0, 1fr);</p>
+<p class="p1"><span class="Apple-converted-space">        </span>gap: 16px;</p>
+<p class="p1"><span class="Apple-converted-space">      </span>}</p>
+<p class="p2"><br></p>
+<p class="p1"><span class="Apple-converted-space">      </span>@media (max-width: 720px) {</p>
+<p class="p1"><span class="Apple-converted-space">        </span>.two-column {</p>
+<p class="p1"><span class="Apple-converted-space">          </span>grid-template-columns: 1fr;</p>
+<p class="p1"><span class="Apple-converted-space">        </span>}</p>
+<p class="p1"><span class="Apple-converted-space">      </span>}</p>
+<p class="p2"><br></p>
+<p class="p1"><span class="Apple-converted-space">      </span>.small {</p>
+<p class="p1"><span class="Apple-converted-space">        </span>font-size: 0.8rem;</p>
+<p class="p1"><span class="Apple-converted-space">      </span>}</p>
+<p class="p2"><br></p>
+<p class="p1"><span class="Apple-converted-space">      </span>.badge {</p>
+<p class="p1"><span class="Apple-converted-space">        </span>display: inline-block;</p>
+<p class="p1"><span class="Apple-converted-space">        </span>padding: 2px 6px;</p>
+<p class="p1"><span class="Apple-converted-space">        </span>border: 1px solid #808080;</p>
+<p class="p1"><span class="Apple-converted-space">        </span>background: #d4d0c8;</p>
+<p class="p1"><span class="Apple-converted-space">        </span>font-size: 0.7rem;</p>
+<p class="p1"><span class="Apple-converted-space">        </span>text-transform: uppercase;</p>
+<p class="p1"><span class="Apple-converted-space">        </span>letter-spacing: 0.08em;</p>
+<p class="p1"><span class="Apple-converted-space">        </span>margin-right: 4px;</p>
+<p class="p1"><span class="Apple-converted-space">      </span>}</p>
+<p class="p2"><br></p>
+<p class="p1"><span class="Apple-converted-space">      </span>.status-bar {</p>
+<p class="p1"><span class="Apple-converted-space">        </span>font-size: 0.8rem;</p>
+<p class="p1"><span class="Apple-converted-space">      </span>}</p>
+<p class="p1"><span class="Apple-converted-space">      </span>/* Background image for log window */</p>
+<p class="p1">#log {</p>
+<p class="p1"><span class="Apple-converted-space">  </span>position: relative;</p>
+<p class="p1"><span class="Apple-converted-space">  </span>background: transparent; <span class="Apple-converted-space">    </span>/* turn off solid bg */</p>
+<p class="p1"><span class="Apple-converted-space">  </span>color: #ff2a2a;<span class="Apple-converted-space">              </span>/* white text on dark image */</p>
+<p class="p1"><span class="Apple-converted-space">  </span>z-index: 1;</p>
+<p class="p1"><span class="Apple-converted-space">  </span>font-size: 18px;</p>
+<p class="p1">}</p>
+<p class="p2"><br></p>
+<p class="p1">/* Add image with opacity via pseudo-element */</p>
+<p class="p1">#log::before {</p>
+<p class="p1"><span class="Apple-converted-space">  </span>content: "";</p>
+<p class="p1"><span class="Apple-converted-space">  </span>position: absolute;</p>
+<p class="p1"><span class="Apple-converted-space">  </span>inset: 0;</p>
+<p class="p1"><span class="Apple-converted-space">  </span>background: url("https://raw.githubusercontent.com/MingjiWang/chilling_lopo_pics/main/79cbc0bca1453cd3c4aab2ac1d220eb7.jpg") center/cover no-repeat;</p>
+<p class="p1"><span class="Apple-converted-space">  </span>opacity: 0.9; <span class="Apple-converted-space">              </span>/* adjust visibility */</p>
+<p class="p1"><span class="Apple-converted-space">  </span>z-index: -1;</p>
+<p class="p1"><span class="Apple-converted-space">  </span>pointer-events: none;</p>
+<p class="p1"><span class="Apple-converted-space">  </span>background-position: center top;</p>
+<p class="p1"><span class="Apple-converted-space">  </span>background-size: 100% auto;</p>
+<p class="p1">}</p>
+<p class="p2"><br></p>
+<p class="p2"><br></p>
+<p class="p1">/* Background image for drop-zone */</p>
+<p class="p1">#modelDropZone {</p>
+<p class="p1"><span class="Apple-converted-space">  </span>position: relative;</p>
+<p class="p1"><span class="Apple-converted-space">  </span>z-index: 0;</p>
+<p class="p1"><span class="Apple-converted-space">  </span>background: transparent;</p>
+<p class="p1"><span class="Apple-converted-space">  </span>overflow: hidden;</p>
+<p class="p1">}</p>
+<p class="p2"><br></p>
+<p class="p1">#modelDropZone::before {</p>
+<p class="p1"><span class="Apple-converted-space">  </span>content: "";</p>
+<p class="p1"><span class="Apple-converted-space">  </span>position: absolute;</p>
+<p class="p1"><span class="Apple-converted-space">  </span>inset: 0;</p>
+<p class="p1"><span class="Apple-converted-space">  </span>background: url("https://raw.githubusercontent.com/MingjiWang/chilling_lopo_pics/main/2914a6cd47efa1cf1645a491029ba18a.gif") center/cover no-repeat;</p>
+<p class="p1"><span class="Apple-converted-space">  </span>opacity: 0.9;</p>
+<p class="p1"><span class="Apple-converted-space">  </span>z-index: -1;</p>
+<p class="p1"><span class="Apple-converted-space">  </span>pointer-events: none;</p>
+<p class="p1">}</p>
+<p class="p2"><br></p>
+<p class="p1"><span class="Apple-converted-space">    </span>&lt;/style&gt;</p>
+<p class="p1"><span class="Apple-converted-space">  </span>&lt;/head&gt;</p>
+<p class="p1"><span class="Apple-converted-space">  </span>&lt;body&gt;</p>
+<p class="p1"><span class="Apple-converted-space">    </span>&lt;div class="app"&gt;</p>
+<p class="p1"><span class="Apple-converted-space">      </span>&lt;div class="window"&gt;</p>
+<p class="p1"><span class="Apple-converted-space">        </span>&lt;div class="title-bar"&gt;</p>
+<p class="p1"><span class="Apple-converted-space">          </span>&lt;div class="title-bar-text"&gt;</p>
+<p class="p1"><span class="Apple-converted-space">            </span>Browser Piano Transcription (Kong et al. 2020)</p>
+<p class="p1"><span class="Apple-converted-space">          </span>&lt;/div&gt;</p>
+<p class="p1"><span class="Apple-converted-space">          </span>&lt;div class="title-bar-controls"&gt;</p>
+<p class="p1"><span class="Apple-converted-space">            </span>&lt;button aria-label="Minimize"&gt;&lt;/button&gt;</p>
+<p class="p1"><span class="Apple-converted-space">            </span>&lt;button aria-label="Maximize"&gt;&lt;/button&gt;</p>
+<p class="p1"><span class="Apple-converted-space">            </span>&lt;button aria-label="Close"&gt;&lt;/button&gt;</p>
+<p class="p1"><span class="Apple-converted-space">          </span>&lt;/div&gt;</p>
+<p class="p1"><span class="Apple-converted-space">        </span>&lt;/div&gt;</p>
+<p class="p2"><br></p>
+<p class="p1"><span class="Apple-converted-space">        </span>&lt;div class="window-body"&gt;</p>
+<p class="p1"><span class="Apple-converted-space">          </span>&lt;!-- Description / How to use --&gt;</p>
+<p class="p1"><span class="Apple-converted-space">          </span>&lt;p class="subtitle"&gt;</p>
+<p class="p1"><span class="Apple-converted-space">            </span>High-resolution piano transcription with pedals, running entirely in your browser using ONNX Runtime Web.</p>
+<p class="p1"><span class="Apple-converted-space">          </span>&lt;/p&gt;</p>
+<p class="p2"><br></p>
+<p class="p1"><span class="Apple-converted-space">          </span>&lt;div class="two-column"&gt;</p>
+<p class="p1"><span class="Apple-converted-space">            </span>&lt;div&gt;</p>
+<p class="p1"><span class="Apple-converted-space">              </span>&lt;div class="section-title"&gt;How to use&lt;/div&gt;</p>
+<p class="p1"><span class="Apple-converted-space">              </span>&lt;ol class="small"&gt;</p>
+<p class="p1"><span class="Apple-converted-space">                </span>&lt;li&gt;</p>
+<p class="p1"><span class="Apple-converted-space">                  </span>&lt;strong&gt;Download the pretrained ONNX model&lt;/strong&gt; using the button below.</p>
+<p class="p1"><span class="Apple-converted-space">                </span>&lt;/li&gt;</p>
+<p class="p1"><span class="Apple-converted-space">                </span>&lt;li&gt;</p>
+<p class="p1"><span class="Apple-converted-space">                  </span>&lt;strong&gt;Load the model&lt;/strong&gt; by<span class="Apple-converted-space"> </span></p>
+<p class="p1"><span class="Apple-converted-space">                  </span>&lt;em&gt;dropping&lt;/em&gt; the &lt;code&gt;.onnx&lt;/code&gt; file onto the model area</p>
+<p class="p1"><span class="Apple-converted-space">                  </span>or clicking it to choose a file.</p>
+<p class="p1"><span class="Apple-converted-space">                </span>&lt;/li&gt;</p>
+<p class="p1"><span class="Apple-converted-space">                </span>&lt;li&gt;</p>
+<p class="p1"><span class="Apple-converted-space">                  </span>&lt;strong&gt;Load a piano audio file&lt;/strong&gt; (mono or stereo, any sample rate).</p>
+<p class="p1"><span class="Apple-converted-space">                </span>&lt;/li&gt;</p>
+<p class="p1"><span class="Apple-converted-space">                </span>&lt;li&gt;</p>
+<p class="p1"><span class="Apple-converted-space">                  </span>Click &lt;strong&gt;“Run Transcription”&lt;/strong&gt; and wait for processing</p>
+<p class="p1"><span class="Apple-converted-space">                  </span>(audio is resampled to 16 kHz and split into overlapping chunks).</p>
+<p class="p1"><span class="Apple-converted-space">                </span>&lt;/li&gt;</p>
+<p class="p1"><span class="Apple-converted-space">                </span>&lt;li&gt;</p>
+<p class="p1"><span class="Apple-converted-space">                  </span>When finished, click &lt;strong&gt;“Download MIDI”&lt;/strong&gt; to get the transcription</p>
+<p class="p1"><span class="Apple-converted-space">                  </span>including sustain pedal (CC64) events.</p>
+<p class="p1"><span class="Apple-converted-space">                </span>&lt;/li&gt;</p>
+<p class="p1"><span class="Apple-converted-space">              </span>&lt;/ol&gt;</p>
+<p class="p2"><br></p>
+<p class="p1"><span class="Apple-converted-space">              </span>&lt;p class="hint"&gt;</p>
+<p class="p1"><span class="Apple-converted-space">                </span>The model follows the paper by Kong et al. (2020), regressing onset and offset</p>
+<p class="p1"><span class="Apple-converted-space">                </span>times on a 100&amp;nbsp;fps frame grid, plus a separate pedal head. This demo uses</p>
+<p class="p1"><span class="Apple-converted-space">                </span>10&amp;nbsp;s segments with 5&amp;nbsp;s overlap and a simple overlap-stitching scheme.</p>
+<p class="p1"><span class="Apple-converted-space">              </span>&lt;/p&gt;</p>
+<p class="p2"><br></p>
+<p class="p1"><span class="Apple-converted-space">              </span>&lt;div class="field-row" style="margin-top: 8px;"&gt;</p>
+<p class="p1"><span class="Apple-converted-space">                </span>&lt;button id="downloadOnnxBtn"&gt;Download official ONNX model&lt;/button&gt;</p>
+<p class="p1"><span class="Apple-converted-space">                </span>&lt;span class="small"&gt;</p>
+<p class="p1"><span class="Apple-converted-space">                  </span>(&lt;code&gt;CC-BY&amp;nbsp;4.0&lt;/code&gt; weights from Zenodo, converted to ONNX)</p>
+<p class="p1"><span class="Apple-converted-space">                </span>&lt;/span&gt;</p>
+<p class="p1"><span class="Apple-converted-space">              </span>&lt;/div&gt;</p>
+<p class="p1"><span class="Apple-converted-space">            </span>&lt;/div&gt;</p>
+<p class="p2"><br></p>
+<p class="p1"><span class="Apple-converted-space">            </span>&lt;div&gt;</p>
+<p class="p1"><span class="Apple-converted-space">              </span>&lt;div class="section-title"&gt;Model info&lt;/div&gt;</p>
+<p class="p1"><span class="Apple-converted-space">              </span>&lt;p class="small"&gt;</p>
+<p class="p1"><span class="Apple-converted-space">                </span>&lt;span class="badge"&gt;Model&lt;/span&gt;</p>
+<p class="p1"><span class="Apple-converted-space">                </span>CRNN piano transcription with onset/offset regression and pedal head</p>
+<p class="p1"><span class="Apple-converted-space">              </span>&lt;/p&gt;</p>
+<p class="p1"><span class="Apple-converted-space">              </span>&lt;p class="small"&gt;</p>
+<p class="p1"><span class="Apple-converted-space">                </span>&lt;span class="badge"&gt;Source&lt;/span&gt;</p>
+<p class="p1"><span class="Apple-converted-space">                </span>Q. Kong, B. Li, X. Song, Y. Wan, Y. Wang (2020),</p>
+<p class="p1"><span class="Apple-converted-space">                </span>“High-resolution Piano Transcription with Pedals by Regressing Onsets and Offsets Times”</p>
+<p class="p1"><span class="Apple-converted-space">                </span>(&lt;a href="https://arxiv.org/abs/2010.01815" target="_blank"&gt;arXiv:2010.01815&lt;/a&gt;)</p>
+<p class="p1"><span class="Apple-converted-space">              </span>&lt;/p&gt;</p>
+<p class="p1"><span class="Apple-converted-space">              </span>&lt;p class="small"&gt;</p>
+<p class="p1"><span class="Apple-converted-space">                </span>&lt;span class="badge"&gt;Checkpoint&lt;/span&gt;</p>
+<p class="p1"><span class="Apple-converted-space">                </span>Zenodo: &lt;a href="https://doi.org/10.5281/zenodo.4034264" target="_blank"&gt;10.5281/zenodo.4034264&lt;/a&gt;&lt;br/&gt;</p>
+<p class="p1"><span class="Apple-converted-space">                </span>ONNX: exported from the official &lt;code&gt;.pth&lt;/code&gt; checkpoint.</p>
+<p class="p1"><span class="Apple-converted-space">              </span>&lt;/p&gt;</p>
+<p class="p1"><span class="Apple-converted-space">              </span>&lt;p class="small"&gt;</p>
+<p class="p1"><span class="Apple-converted-space">                </span>&lt;span class="badge"&gt;License&lt;/span&gt;</p>
+<p class="p1"><span class="Apple-converted-space">                </span>Model weights: &lt;strong&gt;CC-BY&amp;nbsp;4.0&lt;/strong&gt; (attribution required).&lt;br/&gt;</p>
+<p class="p1"><span class="Apple-converted-space">                </span>This HTML/JS wrapper: &lt;strong&gt;MIT&lt;/strong&gt; (see source header).</p>
+<p class="p1"><span class="Apple-converted-space">              </span>&lt;/p&gt;</p>
+<p class="p1"><span class="Apple-converted-space">            </span>&lt;/div&gt;</p>
+<p class="p1"><span class="Apple-converted-space">          </span>&lt;/div&gt;</p>
+<p class="p2"><br></p>
+<p class="p1"><span class="Apple-converted-space">          </span>&lt;hr&gt;</p>
+<p class="p2"><br></p>
+<p class="p1"><span class="Apple-converted-space">          </span>&lt;!-- Controls --&gt;</p>
+<p class="p1"><span class="Apple-converted-space">          </span>&lt;div class="section-title"&gt;1. Load Model (.onnx)&lt;/div&gt;</p>
+<p class="p1"><span class="Apple-converted-space">          </span>&lt;div class="drop-zone" id="modelDropZone"&gt;</p>
+<p class="p1"><span class="Apple-converted-space">            </span>&lt;strong&gt;Drop ONNX file here&lt;/strong&gt;&lt;br&gt;</p>
+<p class="p1"><span class="Apple-converted-space">            </span>or click to choose a file.</p>
+<p class="p1"><span class="Apple-converted-space">            </span>&lt;br&gt;</p>
+<p class="p1"><span class="Apple-converted-space">            </span>&lt;span class="small"&gt;(e.g. &lt;code&gt;kong_CRNN_note_F1.0.9677_pedal_F1.0.9186.onnx&lt;/code&gt;)&lt;/span&gt;</p>
+<p class="p1"><span class="Apple-converted-space">            </span>&lt;input type="file" id="modelFile" accept=".onnx" style="display:none;"&gt;</p>
+<p class="p1"><span class="Apple-converted-space">          </span>&lt;/div&gt;</p>
+<p class="p2"><br></p>
+<p class="p1"><span class="Apple-converted-space">          </span>&lt;div class="section-title"&gt;2. Load Audio&lt;/div&gt;</p>
+<p class="p1"><span class="Apple-converted-space">          </span>&lt;div class="field-row"&gt;</p>
+<p class="p1"><span class="Apple-converted-space">            </span>&lt;label for="audioFile"&gt;Audio file:&lt;/label&gt;</p>
+<p class="p1"><span class="Apple-converted-space">            </span>&lt;input type="file" id="audioFile" accept="audio/*"&gt;</p>
+<p class="p1"><span class="Apple-converted-space">          </span>&lt;/div&gt;</p>
+<p class="p2"><br></p>
+<p class="p1"><span class="Apple-converted-space">          </span>&lt;div class="section-title"&gt;3. Run&lt;/div&gt;</p>
+<p class="p1"><span class="Apple-converted-space">          </span>&lt;div class="field-row"&gt;</p>
+<p class="p1"><span class="Apple-converted-space">            </span>&lt;button id="runBtn"&gt;Run Transcription&lt;/button&gt;</p>
+<p class="p1"><span class="Apple-converted-space">            </span>&lt;button id="downloadMidiBtn" disabled&gt;Download MIDI&lt;/button&gt;</p>
+<p class="p1"><span class="Apple-converted-space">          </span>&lt;/div&gt;</p>
+<p class="p2"><br></p>
+<p class="p1"><span class="Apple-converted-space">          </span>&lt;progress id="progress" max="100" value="0"&gt;&lt;/progress&gt;</p>
+<p class="p2"><br></p>
+<p class="p1"><span class="Apple-converted-space">          </span>&lt;div class="section-title"&gt;Log&lt;/div&gt;</p>
+<p class="p1"><span class="Apple-converted-space">          </span>&lt;pre id="log"&gt;&lt;/pre&gt;</p>
+<p class="p1"><span class="Apple-converted-space">        </span>&lt;/div&gt;</p>
+<p class="p2"><br></p>
+<p class="p1"><span class="Apple-converted-space">        </span>&lt;div class="status-bar"&gt;</p>
+<p class="p1"><span class="Apple-converted-space">          </span>&lt;p class="status-bar-field" id="status"&gt;Ready. No model loaded.&lt;/p&gt;</p>
+<p class="p1"><span class="Apple-converted-space">          </span>&lt;p class="status-bar-field"&gt;Backend: ONNX Runtime Web (WebGPU/WASM)&lt;/p&gt;</p>
+<p class="p1"><span class="Apple-converted-space">          </span>&lt;p class="status-bar-field"&gt;Frames: 100 fps (16 kHz / 160-sample hop)&lt;/p&gt;</p>
+<p class="p1"><span class="Apple-converted-space">        </span>&lt;/div&gt;</p>
+<p class="p1"><span class="Apple-converted-space">      </span>&lt;/div&gt;</p>
+<p class="p1"><span class="Apple-converted-space">    </span>&lt;/div&gt;</p>
+<p class="p2"><br></p>
+<p class="p1"><span class="Apple-converted-space">    </span>&lt;script src="https://cdn.jsdelivr.net/npm/onnxruntime-web/dist/ort.min.js"&gt;&lt;/script&gt;</p>
+<p class="p1"><span class="Apple-converted-space">    </span>&lt;script src="https://cdn.jsdelivr.net/npm/@tonejs/midi@2.0.28/build/Midi.js"&gt;&lt;/script&gt;</p>
+<p class="p2"><br></p>
+<p class="p1"><span class="Apple-converted-space">    </span>&lt;script&gt;</p>
+<p class="p1"><span class="Apple-converted-space">      </span>// --- Constants ---</p>
+<p class="p1"><span class="Apple-converted-space">      </span>const SAMPLE_RATE = 16000;</p>
+<p class="p1"><span class="Apple-converted-space">      </span>const HOP_SIZE = 160;</p>
+<p class="p1"><span class="Apple-converted-space">      </span>const FRAMES_PER_SEC = SAMPLE_RATE / HOP_SIZE; // 100 fps</p>
+<p class="p1"><span class="Apple-converted-space">      </span>const PITCHES = 88;</p>
+<p class="p2"><br></p>
+<p class="p1"><span class="Apple-converted-space">      </span>// Segmentation: 10s segments, 5s hop (50% overlap)</p>
+<p class="p1"><span class="Apple-converted-space">      </span>const SEGMENT_SECONDS = 10;</p>
+<p class="p1"><span class="Apple-converted-space">      </span>const HOP_SECONDS = 5;</p>
+<p class="p2"><br></p>
+<p class="p1"><span class="Apple-converted-space">      </span>// Note detection thresholds (from original repo)</p>
+<p class="p1"><span class="Apple-converted-space">      </span>const ONSET_REG_THRESHOLD = 0.3;</p>
+<p class="p1"><span class="Apple-converted-space">      </span>const OFFSET_REG_THRESHOLD = 0.3;</p>
+<p class="p1"><span class="Apple-converted-space">      </span>const FRAME_THRESHOLD = 0.1;</p>
+<p class="p1"><span class="Apple-converted-space">      </span>const MIN_DUR = 0.03; // seconds</p>
+<p class="p2"><br></p>
+<p class="p1"><span class="Apple-converted-space">      </span>// Pedal detection thresholds (from inference.py / utilities.py)</p>
+<p class="p1"><span class="Apple-converted-space">      </span>const PEDAL_OFFSET_REG_THRESHOLD = 0.2;</p>
+<p class="p1"><span class="Apple-converted-space">      </span>const PEDAL_FRAME_THRESHOLD = 0.5;</p>
+<p class="p2"><br></p>
+<p class="p1"><span class="Apple-converted-space">      </span>// Regression neighbourhoods</p>
+<p class="p1"><span class="Apple-converted-space">      </span>const NEIGHBOUR_ONSET = 2;</p>
+<p class="p1"><span class="Apple-converted-space">      </span>const NEIGHBOUR_OFFSET = 4;</p>
+<p class="p2"><br></p>
+<p class="p1"><span class="Apple-converted-space">      </span>const OFFICIAL_MODEL_URL =</p>
+<p class="p1"><span class="Apple-converted-space">        </span>"https://github.com/MingjiWang/kong-piano-transcription-onnx/releases/download/v1.0.0/kong_CRNN_note_F1.0.9677_pedal_F1.0.9186.onnx";</p>
+<p class="p2"><br></p>
+<p class="p1"><span class="Apple-converted-space">      </span>let onnxSession = null;</p>
+<p class="p1"><span class="Apple-converted-space">      </span>let audioBuffer = null;</p>
+<p class="p1"><span class="Apple-converted-space">      </span>let detectedNotes = [];</p>
+<p class="p1"><span class="Apple-converted-space">      </span>let detectedPedals = [];</p>
+<p class="p2"><br></p>
+<p class="p1"><span class="Apple-converted-space">      </span>const logElem = document.getElementById("log");</p>
+<p class="p1"><span class="Apple-converted-space">      </span>const progressElem = document.getElementById("progress");</p>
+<p class="p1"><span class="Apple-converted-space">      </span>const statusElem = document.getElementById("status");</p>
+<p class="p1"><span class="Apple-converted-space">      </span>const modelDropZone = document.getElementById("modelDropZone");</p>
+<p class="p1"><span class="Apple-converted-space">      </span>const modelFileInput = document.getElementById("modelFile");</p>
+<p class="p2"><br></p>
+<p class="p1"><span class="Apple-converted-space">      </span>function log(msg) {</p>
+<p class="p1"><span class="Apple-converted-space">        </span>logElem.textContent += `[${new Date().toLocaleTimeString()}] ${msg}\n`;</p>
+<p class="p1"><span class="Apple-converted-space">        </span>logElem.scrollTop = logElem.scrollHeight;</p>
+<p class="p1"><span class="Apple-converted-space">      </span>}</p>
+<p class="p2"><br></p>
+<p class="p1"><span class="Apple-converted-space">      </span>function setProgress(percent) {</p>
+<p class="p1"><span class="Apple-converted-space">        </span>if (percent &lt;= 0) {</p>
+<p class="p1"><span class="Apple-converted-space">          </span>progressElem.style.display = "none";</p>
+<p class="p1"><span class="Apple-converted-space">          </span>progressElem.value = 0;</p>
+<p class="p1"><span class="Apple-converted-space">          </span>return;</p>
+<p class="p1"><span class="Apple-converted-space">        </span>}</p>
+<p class="p1"><span class="Apple-converted-space">        </span>progressElem.style.display = "block";</p>
+<p class="p1"><span class="Apple-converted-space">        </span>progressElem.value = percent;</p>
+<p class="p1"><span class="Apple-converted-space">      </span>}</p>
+<p class="p2"><br></p>
+<p class="p1"><span class="Apple-converted-space">      </span>function setStatus(text) {</p>
+<p class="p1"><span class="Apple-converted-space">        </span>statusElem.textContent = text;</p>
+<p class="p1"><span class="Apple-converted-space">      </span>}</p>
+<p class="p2"><br></p>
+<p class="p1"><span class="Apple-converted-space">      </span>// --- Download ONNX button (opens GitHub Release asset) ---</p>
+<p class="p1"><span class="Apple-converted-space">      </span>document.getElementById("downloadOnnxBtn").addEventListener("click", () =&gt; {</p>
+<p class="p1"><span class="Apple-converted-space">        </span>window.open(OFFICIAL_MODEL_URL, "_blank");</p>
+<p class="p1"><span class="Apple-converted-space">      </span>});</p>
+<p class="p2"><br></p>
+<p class="p1"><span class="Apple-converted-space">      </span>// --- Model loading (shared between file input and drag-drop) ---</p>
+<p class="p1"><span class="Apple-converted-space">      </span>async function loadModelFile(file) {</p>
+<p class="p1"><span class="Apple-converted-space">        </span>try {</p>
+<p class="p1"><span class="Apple-converted-space">          </span>setStatus(`Loading model: ${file.name} ...`);</p>
+<p class="p1"><span class="Apple-converted-space">          </span>const buffer = await file.arrayBuffer();</p>
+<p class="p1"><span class="Apple-converted-space">          </span>onnxSession = await ort.InferenceSession.create(buffer, {</p>
+<p class="p1"><span class="Apple-converted-space">            </span>executionProviders: ["webgpu", "wasm"],</p>
+<p class="p1"><span class="Apple-converted-space">          </span>});</p>
+<p class="p1"><span class="Apple-converted-space">          </span>log(`Model loaded: ${file.name}`);</p>
+<p class="p1"><span class="Apple-converted-space">          </span>setStatus(`Model loaded: ${file.name}`);</p>
+<p class="p1"><span class="Apple-converted-space">        </span>} catch (err) {</p>
+<p class="p1"><span class="Apple-converted-space">          </span>console.error(err);</p>
+<p class="p1"><span class="Apple-converted-space">          </span>log(`Error loading model: ${err}`);</p>
+<p class="p1"><span class="Apple-converted-space">          </span>setStatus("Error loading model (see log).");</p>
+<p class="p1"><span class="Apple-converted-space">        </span>}</p>
+<p class="p1"><span class="Apple-converted-space">      </span>}</p>
+<p class="p2"><br></p>
+<p class="p1"><span class="Apple-converted-space">      </span>// File input for model</p>
+<p class="p1"><span class="Apple-converted-space">      </span>modelFileInput.addEventListener("change", async (e) =&gt; {</p>
+<p class="p1"><span class="Apple-converted-space">        </span>const file = e.target.files[0];</p>
+<p class="p1"><span class="Apple-converted-space">        </span>if (!file) return;</p>
+<p class="p1"><span class="Apple-converted-space">        </span>await loadModelFile(file);</p>
+<p class="p1"><span class="Apple-converted-space">      </span>});</p>
+<p class="p2"><br></p>
+<p class="p1"><span class="Apple-converted-space">      </span>// Click on drop zone → open file picker</p>
+<p class="p1"><span class="Apple-converted-space">      </span>modelDropZone.addEventListener("click", () =&gt; {</p>
+<p class="p1"><span class="Apple-converted-space">        </span>modelFileInput.click();</p>
+<p class="p1"><span class="Apple-converted-space">      </span>});</p>
+<p class="p2"><br></p>
+<p class="p1"><span class="Apple-converted-space">      </span>// Drag &amp; drop for ONNX model</p>
+<p class="p1"><span class="Apple-converted-space">      </span>modelDropZone.addEventListener("dragover", (e) =&gt; {</p>
+<p class="p1"><span class="Apple-converted-space">        </span>e.preventDefault();</p>
+<p class="p1"><span class="Apple-converted-space">        </span>modelDropZone.classList.add("drop-zone--hover");</p>
+<p class="p1"><span class="Apple-converted-space">      </span>});</p>
+<p class="p2"><br></p>
+<p class="p1"><span class="Apple-converted-space">      </span>modelDropZone.addEventListener("dragleave", (e) =&gt; {</p>
+<p class="p1"><span class="Apple-converted-space">        </span>e.preventDefault();</p>
+<p class="p1"><span class="Apple-converted-space">        </span>modelDropZone.classList.remove("drop-zone--hover");</p>
+<p class="p1"><span class="Apple-converted-space">      </span>});</p>
+<p class="p2"><br></p>
+<p class="p1"><span class="Apple-converted-space">      </span>modelDropZone.addEventListener("drop", async (e) =&gt; {</p>
+<p class="p1"><span class="Apple-converted-space">        </span>e.preventDefault();</p>
+<p class="p1"><span class="Apple-converted-space">        </span>modelDropZone.classList.remove("drop-zone--hover");</p>
+<p class="p1"><span class="Apple-converted-space">        </span>const file = e.dataTransfer.files[0];</p>
+<p class="p1"><span class="Apple-converted-space">        </span>if (!file) return;</p>
+<p class="p1"><span class="Apple-converted-space">        </span>if (!file.name.toLowerCase().endsWith(".onnx")) {</p>
+<p class="p1"><span class="Apple-converted-space">          </span>log("Dropped file is not an .onnx model.");</p>
+<p class="p1"><span class="Apple-converted-space">          </span>return;</p>
+<p class="p1"><span class="Apple-converted-space">        </span>}</p>
+<p class="p1"><span class="Apple-converted-space">        </span>await loadModelFile(file);</p>
+<p class="p1"><span class="Apple-converted-space">      </span>});</p>
+<p class="p2"><br></p>
+<p class="p1"><span class="Apple-converted-space">      </span>// --- Audio loading ---</p>
+<p class="p1"><span class="Apple-converted-space">      </span>document.getElementById("audioFile").addEventListener("change", async (e) =&gt; {</p>
+<p class="p1"><span class="Apple-converted-space">        </span>const file = e.target.files[0];</p>
+<p class="p1"><span class="Apple-converted-space">        </span>if (!file) return;</p>
+<p class="p1"><span class="Apple-converted-space">        </span>try {</p>
+<p class="p1"><span class="Apple-converted-space">          </span>const arrayBuf = await file.arrayBuffer();</p>
+<p class="p1"><span class="Apple-converted-space">          </span>const audioCtx = new (window.AudioContext || window.webkitAudioContext)();</p>
+<p class="p1"><span class="Apple-converted-space">          </span>audioBuffer = await audioCtx.decodeAudioData(arrayBuf);</p>
+<p class="p1"><span class="Apple-converted-space">          </span>log(`Audio loaded: ${file.name} (${audioBuffer.duration.toFixed(2)}s)`);</p>
+<p class="p1"><span class="Apple-converted-space">          </span>setStatus(`Audio loaded: ${file.name}`);</p>
+<p class="p1"><span class="Apple-converted-space">        </span>} catch (err) {</p>
+<p class="p1"><span class="Apple-converted-space">          </span>console.error(err);</p>
+<p class="p1"><span class="Apple-converted-space">          </span>log(`Error decoding audio: ${err}`);</p>
+<p class="p1"><span class="Apple-converted-space">          </span>setStatus("Error decoding audio (see log).");</p>
+<p class="p1"><span class="Apple-converted-space">        </span>}</p>
+<p class="p1"><span class="Apple-converted-space">      </span>});</p>
+<p class="p2"><br></p>
+<p class="p1"><span class="Apple-converted-space">      </span>// --- Main transcription button ---</p>
+<p class="p1"><span class="Apple-converted-space">      </span>document.getElementById("runBtn").addEventListener("click", async () =&gt; {</p>
+<p class="p1"><span class="Apple-converted-space">        </span>if (!onnxSession || !audioBuffer) {</p>
+<p class="p1"><span class="Apple-converted-space">          </span>alert("Load model and audio first.");</p>
+<p class="p1"><span class="Apple-converted-space">          </span>return;</p>
+<p class="p1"><span class="Apple-converted-space">        </span>}</p>
+<p class="p2"><br></p>
+<p class="p1"><span class="Apple-converted-space">        </span>const btn = document.getElementById("runBtn");</p>
+<p class="p1"><span class="Apple-converted-space">        </span>btn.disabled = true;</p>
+<p class="p1"><span class="Apple-converted-space">        </span>btn.textContent = "Processing...";</p>
+<p class="p1"><span class="Apple-converted-space">        </span>document.getElementById("downloadMidiBtn").disabled = true;</p>
+<p class="p1"><span class="Apple-converted-space">        </span>detectedNotes = [];</p>
+<p class="p1"><span class="Apple-converted-space">        </span>detectedPedals = [];</p>
+<p class="p1"><span class="Apple-converted-space">        </span>setStatus("Running transcription...");</p>
+<p class="p2"><br></p>
+<p class="p1"><span class="Apple-converted-space">        </span>try {</p>
+<p class="p1"><span class="Apple-converted-space">          </span>// 1. Resample &amp; Normalize</p>
+<p class="p1"><span class="Apple-converted-space">          </span>log("Preprocessing audio (resample to 16kHz, mono, normalize)...");</p>
+<p class="p1"><span class="Apple-converted-space">          </span>const offlineCtx = new OfflineAudioContext(</p>
+<p class="p1"><span class="Apple-converted-space">            </span>1,</p>
+<p class="p1"><span class="Apple-converted-space">            </span>Math.ceil(audioBuffer.duration * SAMPLE_RATE),</p>
+<p class="p1"><span class="Apple-converted-space">            </span>SAMPLE_RATE</p>
+<p class="p1"><span class="Apple-converted-space">          </span>);</p>
+<p class="p1"><span class="Apple-converted-space">          </span>const source = offlineCtx.createBufferSource();</p>
+<p class="p1"><span class="Apple-converted-space">          </span>source.buffer = audioBuffer;</p>
+<p class="p1"><span class="Apple-converted-space">          </span>source.connect(offlineCtx.destination);</p>
+<p class="p1"><span class="Apple-converted-space">          </span>source.start();</p>
+<p class="p1"><span class="Apple-converted-space">          </span>const resampled = await offlineCtx.startRendering();</p>
+<p class="p1"><span class="Apple-converted-space">          </span>let fullData = resampled.getChannelData(0);</p>
+<p class="p2"><br></p>
+<p class="p1"><span class="Apple-converted-space">          </span>// Normalize fullData to [-1,1]</p>
+<p class="p1"><span class="Apple-converted-space">          </span>let maxAmp = 0.0;</p>
+<p class="p1"><span class="Apple-converted-space">          </span>for (let i = 0; i &lt; fullData.length; i++) {</p>
+<p class="p1"><span class="Apple-converted-space">            </span>const v = Math.abs(fullData[i]);</p>
+<p class="p1"><span class="Apple-converted-space">            </span>if (v &gt; maxAmp) maxAmp = v;</p>
+<p class="p1"><span class="Apple-converted-space">          </span>}</p>
+<p class="p1"><span class="Apple-converted-space">          </span>if (maxAmp &gt; 0) {</p>
+<p class="p1"><span class="Apple-converted-space">            </span>const inv = 1 / maxAmp;</p>
+<p class="p1"><span class="Apple-converted-space">            </span>for (let i = 0; i &lt; fullData.length; i++) {</p>
+<p class="p1"><span class="Apple-converted-space">              </span>fullData[i] *= inv;</p>
+<p class="p1"><span class="Apple-converted-space">            </span>}</p>
+<p class="p1"><span class="Apple-converted-space">          </span>}</p>
+<p class="p2"><br></p>
+<p class="p1"><span class="Apple-converted-space">          </span>const totalSamples = fullData.length;</p>
+<p class="p1"><span class="Apple-converted-space">          </span>const segmentSamples = SEGMENT_SECONDS * SAMPLE_RATE;</p>
+<p class="p1"><span class="Apple-converted-space">          </span>const hopSamples = HOP_SECONDS * SAMPLE_RATE;</p>
+<p class="p2"><br></p>
+<p class="p1"><span class="Apple-converted-space">          </span>log("Starting overlapped chunked inference (10s segments, 5s hop)...");</p>
+<p class="p1"><span class="Apple-converted-space">          </span>const frameChunks = [];</p>
+<p class="p1"><span class="Apple-converted-space">          </span>const velChunks = [];</p>
+<p class="p1"><span class="Apple-converted-space">          </span>const onsetRegChunks = [];</p>
+<p class="p1"><span class="Apple-converted-space">          </span>const offsetRegChunks = [];</p>
+<p class="p1"><span class="Apple-converted-space">          </span>const pedalFrameChunks = [];</p>
+<p class="p1"><span class="Apple-converted-space">          </span>const pedalOffsetRegChunks = [];</p>
+<p class="p2"><br></p>
+<p class="p1"><span class="Apple-converted-space">          </span>for (let start = 0; start &lt; totalSamples; start += hopSamples) {</p>
+<p class="p1"><span class="Apple-converted-space">            </span>const end = Math.min(start + segmentSamples, totalSamples);</p>
+<p class="p1"><span class="Apple-converted-space">            </span>const chunkLength = end - start;</p>
+<p class="p1"><span class="Apple-converted-space">            </span>if (chunkLength &lt; HOP_SIZE) break; // too short to process</p>
+<p class="p2"><br></p>
+<p class="p1"><span class="Apple-converted-space">            </span>const chunkData = fullData.slice(start, end);</p>
+<p class="p1"><span class="Apple-converted-space">            </span>const inputTensor = new ort.Tensor("float32", chunkData, [1, chunkLength]);</p>
+<p class="p2"><br></p>
+<p class="p1"><span class="Apple-converted-space">            </span>const results = await onnxSession.run({ waveform: inputTensor });</p>
+<p class="p2"><br></p>
+<p class="p1"><span class="Apple-converted-space">            </span>const frameOut<span class="Apple-converted-space">        </span>= results["frame_output"]; <span class="Apple-converted-space">            </span>// [1, T, 88]</p>
+<p class="p1"><span class="Apple-converted-space">            </span>const velOut<span class="Apple-converted-space">          </span>= results["velocity_output"];<span class="Apple-converted-space">          </span>// [1, T, 88] (optional)</p>
+<p class="p1"><span class="Apple-converted-space">            </span>const regOnset<span class="Apple-converted-space">        </span>= results["reg_onset_output"]; <span class="Apple-converted-space">        </span>// [1, T, 88]</p>
+<p class="p1"><span class="Apple-converted-space">            </span>const regOffset <span class="Apple-converted-space">      </span>= results["reg_offset_output"];<span class="Apple-converted-space">        </span>// [1, T, 88]</p>
+<p class="p1"><span class="Apple-converted-space">            </span>const regPedalOffset<span class="Apple-converted-space">  </span>= results["reg_pedal_offset_output"];<span class="Apple-converted-space">  </span>// [1, T, 1] (optional)</p>
+<p class="p1"><span class="Apple-converted-space">            </span>const pedalFrame<span class="Apple-converted-space">      </span>= results["pedal_frame_output"]; <span class="Apple-converted-space">      </span>// [1, T, 1] (optional)</p>
+<p class="p2"><br></p>
+<p class="p1"><span class="Apple-converted-space">            </span>if (!frameOut || !regOnset || !regOffset) {</p>
+<p class="p1"><span class="Apple-converted-space">              </span>throw new Error("Missing expected note outputs: need frame_output, reg_onset_output, reg_offset_output");</p>
+<p class="p1"><span class="Apple-converted-space">            </span>}</p>
+<p class="p2"><br></p>
+<p class="p1"><span class="Apple-converted-space">            </span>const T = frameOut.dims[1]; // dims: [1, T, P]</p>
+<p class="p1"><span class="Apple-converted-space">            </span>const P = frameOut.dims[2];</p>
+<p class="p1"><span class="Apple-converted-space">            </span>if (P !== PITCHES) {</p>
+<p class="p1"><span class="Apple-converted-space">              </span>log(`Warning: expected ${PITCHES} pitches but got ${P}. Using ${P} as P.`);</p>
+<p class="p1"><span class="Apple-converted-space">            </span>}</p>
+<p class="p2"><br></p>
+<p class="p1"><span class="Apple-converted-space">            </span>frameChunks.push({ data: new Float32Array(frameOut.data), frames: T });</p>
+<p class="p1"><span class="Apple-converted-space">            </span>onsetRegChunks.push({ data: new Float32Array(regOnset.data), frames: T });</p>
+<p class="p1"><span class="Apple-converted-space">            </span>offsetRegChunks.push({ data: new Float32Array(regOffset.data), frames: T });</p>
+<p class="p2"><br></p>
+<p class="p1"><span class="Apple-converted-space">            </span>if (velOut) {</p>
+<p class="p1"><span class="Apple-converted-space">              </span>velChunks.push({ data: new Float32Array(velOut.data), frames: T });</p>
+<p class="p1"><span class="Apple-converted-space">            </span>}</p>
+<p class="p2"><br></p>
+<p class="p1"><span class="Apple-converted-space">            </span>if (regPedalOffset &amp;&amp; pedalFrame) {</p>
+<p class="p1"><span class="Apple-converted-space">              </span>const Tped = regPedalOffset.dims[1];</p>
+<p class="p1"><span class="Apple-converted-space">              </span>pedalOffsetRegChunks.push({</p>
+<p class="p1"><span class="Apple-converted-space">                </span>data: new Float32Array(regPedalOffset.data),</p>
+<p class="p1"><span class="Apple-converted-space">                </span>frames: Tped</p>
+<p class="p1"><span class="Apple-converted-space">              </span>});</p>
+<p class="p1"><span class="Apple-converted-space">              </span>pedalFrameChunks.push({</p>
+<p class="p1"><span class="Apple-converted-space">                </span>data: new Float32Array(pedalFrame.data),</p>
+<p class="p1"><span class="Apple-converted-space">                </span>frames: Tped</p>
+<p class="p1"><span class="Apple-converted-space">              </span>});</p>
+<p class="p1"><span class="Apple-converted-space">            </span>}</p>
+<p class="p2"><br></p>
+<p class="p1"><span class="Apple-converted-space">            </span>setProgress((end / totalSamples) * 100);</p>
+<p class="p1"><span class="Apple-converted-space">            </span>await new Promise((r) =&gt; setTimeout(r, 5));</p>
+<p class="p1"><span class="Apple-converted-space">          </span>}</p>
+<p class="p2"><br></p>
+<p class="p1"><span class="Apple-converted-space">          </span>log("Stitching (deframe) all note chunks...");</p>
+<p class="p1"><span class="Apple-converted-space">          </span>const stitchedFrame <span class="Apple-converted-space">      </span>= deframeChunks(frameChunks, PITCHES);</p>
+<p class="p1"><span class="Apple-converted-space">          </span>const stitchedOnsetReg<span class="Apple-converted-space">    </span>= deframeChunks(onsetRegChunks, PITCHES);</p>
+<p class="p1"><span class="Apple-converted-space">          </span>const stitchedOffsetReg <span class="Apple-converted-space">  </span>= deframeChunks(offsetRegChunks, PITCHES);</p>
+<p class="p1"><span class="Apple-converted-space">          </span>const stitchedVel <span class="Apple-converted-space">        </span>= velChunks.length</p>
+<p class="p1"><span class="Apple-converted-space">            </span>? deframeChunks(velChunks, PITCHES)</p>
+<p class="p1"><span class="Apple-converted-space">            </span>: { data: null, frames: stitchedFrame.frames };</p>
+<p class="p2"><br></p>
+<p class="p1"><span class="Apple-converted-space">          </span>const Ttotal = stitchedFrame.frames;</p>
+<p class="p1"><span class="Apple-converted-space">          </span>log(`Total frames after stitching: ${Ttotal} (${(Ttotal / FRAMES_PER_SEC).toFixed(2)}s at 100 fps)`);</p>
+<p class="p2"><br></p>
+<p class="p1"><span class="Apple-converted-space">          </span>// 2. Regression-based note decoding</p>
+<p class="p1"><span class="Apple-converted-space">          </span>log("Binarizing onset/offset regression and decoding notes...");</p>
+<p class="p1"><span class="Apple-converted-space">          </span>const onsetRegData<span class="Apple-converted-space">  </span>= stitchedOnsetReg.data;</p>
+<p class="p1"><span class="Apple-converted-space">          </span>const offsetRegData = stitchedOffsetReg.data;</p>
+<p class="p1"><span class="Apple-converted-space">          </span>const frameData <span class="Apple-converted-space">    </span>= stitchedFrame.data;</p>
+<p class="p1"><span class="Apple-converted-space">          </span>const velData <span class="Apple-converted-space">      </span>= stitchedVel.data;</p>
+<p class="p2"><br></p>
+<p class="p1"><span class="Apple-converted-space">          </span>const onsetBinShift = binarizeRegression(</p>
+<p class="p1"><span class="Apple-converted-space">            </span>onsetRegData,</p>
+<p class="p1"><span class="Apple-converted-space">            </span>Ttotal,</p>
+<p class="p1"><span class="Apple-converted-space">            </span>PITCHES,</p>
+<p class="p1"><span class="Apple-converted-space">            </span>ONSET_REG_THRESHOLD,</p>
+<p class="p1"><span class="Apple-converted-space">            </span>NEIGHBOUR_ONSET</p>
+<p class="p1"><span class="Apple-converted-space">          </span>);</p>
+<p class="p1"><span class="Apple-converted-space">          </span>const offsetBinShift = binarizeRegression(</p>
+<p class="p1"><span class="Apple-converted-space">            </span>offsetRegData,</p>
+<p class="p1"><span class="Apple-converted-space">            </span>Ttotal,</p>
+<p class="p1"><span class="Apple-converted-space">            </span>PITCHES,</p>
+<p class="p1"><span class="Apple-converted-space">            </span>OFFSET_REG_THRESHOLD,</p>
+<p class="p1"><span class="Apple-converted-space">            </span>NEIGHBOUR_OFFSET</p>
+<p class="p1"><span class="Apple-converted-space">          </span>);</p>
+<p class="p2"><br></p>
+<p class="p1"><span class="Apple-converted-space">          </span>detectedNotes = detectNotesFromRegression({</p>
+<p class="p1"><span class="Apple-converted-space">            </span>frameData,</p>
+<p class="p1"><span class="Apple-converted-space">            </span>onsetBin: onsetBinShift.binary,</p>
+<p class="p1"><span class="Apple-converted-space">            </span>onsetShift: onsetBinShift.shift,</p>
+<p class="p1"><span class="Apple-converted-space">            </span>offsetBin: offsetBinShift.binary,</p>
+<p class="p1"><span class="Apple-converted-space">            </span>offsetShift: offsetBinShift.shift,</p>
+<p class="p1"><span class="Apple-converted-space">            </span>velData,</p>
+<p class="p1"><span class="Apple-converted-space">            </span>T: Ttotal,</p>
+<p class="p1"><span class="Apple-converted-space">            </span>P: PITCHES,</p>
+<p class="p1"><span class="Apple-converted-space">            </span>frameThreshold: FRAME_THRESHOLD</p>
+<p class="p1"><span class="Apple-converted-space">          </span>});</p>
+<p class="p2"><br></p>
+<p class="p1"><span class="Apple-converted-space">          </span>// 3. Pedal decoding (if model provides pedal outputs)</p>
+<p class="p1"><span class="Apple-converted-space">          </span>if (pedalFrameChunks.length &gt; 0 &amp;&amp; pedalOffsetRegChunks.length &gt; 0) {</p>
+<p class="p1"><span class="Apple-converted-space">            </span>log("Stitching (deframe) pedal chunks and decoding pedals...");</p>
+<p class="p1"><span class="Apple-converted-space">            </span>const stitchedPedalFrame<span class="Apple-converted-space">      </span>= deframeChunks(pedalFrameChunks, 1); <span class="Apple-converted-space">      </span>// (Tped, 1)</p>
+<p class="p1"><span class="Apple-converted-space">            </span>const stitchedPedalOffsetReg<span class="Apple-converted-space">  </span>= deframeChunks(pedalOffsetRegChunks, 1); <span class="Apple-converted-space">  </span>// (Tped, 1)</p>
+<p class="p2"><br></p>
+<p class="p1"><span class="Apple-converted-space">            </span>const Tped = stitchedPedalFrame.frames;</p>
+<p class="p1"><span class="Apple-converted-space">            </span>const pedalFrameData = stitchedPedalFrame.data; <span class="Apple-converted-space">      </span>// length Tped * 1</p>
+<p class="p1"><span class="Apple-converted-space">            </span>const pedalOffsetRegData = stitchedPedalOffsetReg.data;</p>
+<p class="p2"><br></p>
+<p class="p1"><span class="Apple-converted-space">            </span>const pedalBinShift = binarizeRegression(</p>
+<p class="p1"><span class="Apple-converted-space">              </span>pedalOffsetRegData,</p>
+<p class="p1"><span class="Apple-converted-space">              </span>Tped,</p>
+<p class="p1"><span class="Apple-converted-space">              </span>1, // one pedal class</p>
+<p class="p1"><span class="Apple-converted-space">              </span>PEDAL_OFFSET_REG_THRESHOLD,</p>
+<p class="p1"><span class="Apple-converted-space">              </span>NEIGHBOUR_OFFSET</p>
+<p class="p1"><span class="Apple-converted-space">            </span>);</p>
+<p class="p2"><br></p>
+<p class="p1"><span class="Apple-converted-space">            </span>detectedPedals = detectPedalsFromRegression({</p>
+<p class="p1"><span class="Apple-converted-space">              </span>frameData: pedalFrameData,</p>
+<p class="p1"><span class="Apple-converted-space">              </span>offsetBin: pedalBinShift.binary,</p>
+<p class="p1"><span class="Apple-converted-space">              </span>offsetShift: pedalBinShift.shift,</p>
+<p class="p1"><span class="Apple-converted-space">              </span>T: Tped,</p>
+<p class="p1"><span class="Apple-converted-space">              </span>frameThreshold: PEDAL_FRAME_THRESHOLD</p>
+<p class="p1"><span class="Apple-converted-space">            </span>});</p>
+<p class="p2"><br></p>
+<p class="p1"><span class="Apple-converted-space">            </span>log(`Found ${detectedPedals.length} pedal segments.`);</p>
+<p class="p1"><span class="Apple-converted-space">          </span>} else {</p>
+<p class="p1"><span class="Apple-converted-space">            </span>log("Pedal outputs not found in model; skipping pedal decoding.");</p>
+<p class="p1"><span class="Apple-converted-space">            </span>detectedPedals = [];</p>
+<p class="p1"><span class="Apple-converted-space">          </span>}</p>
+<p class="p2"><br></p>
+<p class="p1"><span class="Apple-converted-space">          </span>log(`Success! Found ${detectedNotes.length} notes.`);</p>
+<p class="p1"><span class="Apple-converted-space">          </span>setStatus(`Done. Notes: ${detectedNotes.length}, Pedal segments: ${detectedPedals.length}`);</p>
+<p class="p1"><span class="Apple-converted-space">          </span>document.getElementById("downloadMidiBtn").disabled = detectedNotes.length === 0;</p>
+<p class="p1"><span class="Apple-converted-space">        </span>} catch (err) {</p>
+<p class="p1"><span class="Apple-converted-space">          </span>console.error(err);</p>
+<p class="p1"><span class="Apple-converted-space">          </span>log(`Error: ${err.message}`);</p>
+<p class="p1"><span class="Apple-converted-space">          </span>setStatus("Error during transcription (see log).");</p>
+<p class="p1"><span class="Apple-converted-space">        </span>}</p>
+<p class="p2"><br></p>
+<p class="p1"><span class="Apple-converted-space">        </span>btn.disabled = false;</p>
+<p class="p1"><span class="Apple-converted-space">        </span>btn.textContent = "Run Transcription";</p>
+<p class="p1"><span class="Apple-converted-space">        </span>setProgress(0);</p>
+<p class="p1"><span class="Apple-converted-space">      </span>});</p>
+<p class="p2"><br></p>
+<p class="p1"><span class="Apple-converted-space">      </span>// --- MIDI download ---</p>
+<p class="p1"><span class="Apple-converted-space">      </span>document.getElementById("downloadMidiBtn").addEventListener("click", () =&gt; {</p>
+<p class="p1"><span class="Apple-converted-space">        </span>const midi = new Midi();</p>
+<p class="p1"><span class="Apple-converted-space">        </span>const track = midi.addTrack();</p>
+<p class="p2"><br></p>
+<p class="p1"><span class="Apple-converted-space">        </span>// Notes</p>
+<p class="p1"><span class="Apple-converted-space">        </span>detectedNotes.forEach((n) =&gt; {</p>
+<p class="p1"><span class="Apple-converted-space">          </span>track.addNote({</p>
+<p class="p1"><span class="Apple-converted-space">            </span>midi: n.midi,</p>
+<p class="p1"><span class="Apple-converted-space">            </span>time: n.start,</p>
+<p class="p1"><span class="Apple-converted-space">            </span>duration: n.duration,</p>
+<p class="p1"><span class="Apple-converted-space">            </span>velocity: n.velocity</p>
+<p class="p1"><span class="Apple-converted-space">          </span>});</p>
+<p class="p1"><span class="Apple-converted-space">        </span>});</p>
+<p class="p2"><br></p>
+<p class="p1"><span class="Apple-converted-space">        </span>// Sustain pedal as CC64</p>
+<p class="p1"><span class="Apple-converted-space">        </span>// Tonejs/Midi stores CC values normalized 0–1, so 1.0 = full (127), 0 = off.</p>
+<p class="p1"><span class="Apple-converted-space">        </span>detectedPedals.forEach((p) =&gt; {</p>
+<p class="p1"><span class="Apple-converted-space">          </span>track.addCC({</p>
+<p class="p1"><span class="Apple-converted-space">            </span>number: 64,</p>
+<p class="p1"><span class="Apple-converted-space">            </span>value: 1.0,</p>
+<p class="p1"><span class="Apple-converted-space">            </span>time: p.onset</p>
+<p class="p1"><span class="Apple-converted-space">          </span>});</p>
+<p class="p1"><span class="Apple-converted-space">          </span>track.addCC({</p>
+<p class="p1"><span class="Apple-converted-space">            </span>number: 64,</p>
+<p class="p1"><span class="Apple-converted-space">            </span>value: 0.0,</p>
+<p class="p1"><span class="Apple-converted-space">            </span>time: p.offset</p>
+<p class="p1"><span class="Apple-converted-space">          </span>});</p>
+<p class="p1"><span class="Apple-converted-space">        </span>});</p>
+<p class="p2"><br></p>
+<p class="p1"><span class="Apple-converted-space">        </span>const a = document.createElement("a");</p>
+<p class="p1"><span class="Apple-converted-space">        </span>a.href = URL.createObjectURL(new Blob([midi.toArray()], { type: "audio/midi" }));</p>
+<p class="p1"><span class="Apple-converted-space">        </span>a.download = "transcription.mid";</p>
+<p class="p1"><span class="Apple-converted-space">        </span>a.click();</p>
+<p class="p1"><span class="Apple-converted-space">      </span>});</p>
+<p class="p2"><br></p>
+<p class="p1"><span class="Apple-converted-space">      </span>// --- Stitching / Deframe ---</p>
+<p class="p1"><span class="Apple-converted-space">      </span>function deframeChunks(chunks, classes) {</p>
+<p class="p1"><span class="Apple-converted-space">        </span>if (!chunks.length) return { data: new Float32Array(0), frames: 0 };</p>
+<p class="p2"><br></p>
+<p class="p1"><span class="Apple-converted-space">        </span>const N = chunks.length;</p>
+<p class="p1"><span class="Apple-converted-space">        </span>const ranges = [];</p>
+<p class="p1"><span class="Apple-converted-space">        </span>let totalFrames = 0;</p>
+<p class="p2"><br></p>
+<p class="p1"><span class="Apple-converted-space">        </span>for (let i = 0; i &lt; N; i++) {</p>
+<p class="p1"><span class="Apple-converted-space">          </span>const T = chunks[i].frames;</p>
+<p class="p1"><span class="Apple-converted-space">          </span>let startF, endF;</p>
+<p class="p1"><span class="Apple-converted-space">          </span>if (N === 1) {</p>
+<p class="p1"><span class="Apple-converted-space">            </span>startF = 0;</p>
+<p class="p1"><span class="Apple-converted-space">            </span>endF = T;</p>
+<p class="p1"><span class="Apple-converted-space">          </span>} else if (i === 0) {</p>
+<p class="p1"><span class="Apple-converted-space">            </span>startF = 0;</p>
+<p class="p1"><span class="Apple-converted-space">            </span>endF = Math.floor(T * 0.75);</p>
+<p class="p1"><span class="Apple-converted-space">          </span>} else if (i === N - 1) {</p>
+<p class="p1"><span class="Apple-converted-space">            </span>startF = Math.floor(T * 0.25);</p>
+<p class="p1"><span class="Apple-converted-space">            </span>endF = T;</p>
+<p class="p1"><span class="Apple-converted-space">          </span>} else {</p>
+<p class="p1"><span class="Apple-converted-space">            </span>startF = Math.floor(T * 0.25);</p>
+<p class="p1"><span class="Apple-converted-space">            </span>endF = Math.floor(T * 0.75);</p>
+<p class="p1"><span class="Apple-converted-space">          </span>}</p>
+<p class="p1"><span class="Apple-converted-space">          </span>ranges.push({ startF, endF });</p>
+<p class="p1"><span class="Apple-converted-space">          </span>totalFrames += endF - startF;</p>
+<p class="p1"><span class="Apple-converted-space">        </span>}</p>
+<p class="p2"><br></p>
+<p class="p1"><span class="Apple-converted-space">        </span>const out = new Float32Array(totalFrames * classes);</p>
+<p class="p1"><span class="Apple-converted-space">        </span>let offset = 0;</p>
+<p class="p1"><span class="Apple-converted-space">        </span>for (let i = 0; i &lt; N; i++) {</p>
+<p class="p1"><span class="Apple-converted-space">          </span>const chunk = chunks[i];</p>
+<p class="p1"><span class="Apple-converted-space">          </span>const { startF, endF } = ranges[i];</p>
+<p class="p1"><span class="Apple-converted-space">          </span>const lenFrames = endF - startF;</p>
+<p class="p1"><span class="Apple-converted-space">          </span>if (lenFrames &lt;= 0) continue;</p>
+<p class="p1"><span class="Apple-converted-space">          </span>const srcStart = startF * classes;</p>
+<p class="p1"><span class="Apple-converted-space">          </span>const srcEnd = endF * classes;</p>
+<p class="p1"><span class="Apple-converted-space">          </span>const len = lenFrames * classes;</p>
+<p class="p1"><span class="Apple-converted-space">          </span>out.set(chunk.data.subarray(srcStart, srcEnd), offset);</p>
+<p class="p1"><span class="Apple-converted-space">          </span>offset += len;</p>
+<p class="p1"><span class="Apple-converted-space">        </span>}</p>
+<p class="p2"><br></p>
+<p class="p1"><span class="Apple-converted-space">        </span>return { data: out, frames: totalFrames };</p>
+<p class="p1"><span class="Apple-converted-space">      </span>}</p>
+<p class="p2"><br></p>
+<p class="p1"><span class="Apple-converted-space">      </span>// --- Regression binarization (port of get_binarized_output_from_regression) ---</p>
+<p class="p1"><span class="Apple-converted-space">      </span>function isMonotonicNeighbour(regData, T, P, k, n, neighbour) {</p>
+<p class="p1"><span class="Apple-converted-space">        </span>// regData layout: [T * P]</p>
+<p class="p1"><span class="Apple-converted-space">        </span>for (let i = 0; i &lt; neighbour; i++) {</p>
+<p class="p1"><span class="Apple-converted-space">          </span>const left = regData[(n - i) * P + k];</p>
+<p class="p1"><span class="Apple-converted-space">          </span>const leftPrev = regData[(n - i - 1) * P + k];</p>
+<p class="p1"><span class="Apple-converted-space">          </span>if (left &lt; leftPrev) return false;</p>
+<p class="p2"><br></p>
+<p class="p1"><span class="Apple-converted-space">          </span>const right = regData[(n + i) * P + k];</p>
+<p class="p1"><span class="Apple-converted-space">          </span>const rightNext = regData[(n + i + 1) * P + k];</p>
+<p class="p1"><span class="Apple-converted-space">          </span>if (right &lt; rightNext) return false;</p>
+<p class="p1"><span class="Apple-converted-space">        </span>}</p>
+<p class="p1"><span class="Apple-converted-space">        </span>return true;</p>
+<p class="p1"><span class="Apple-converted-space">      </span>}</p>
+<p class="p2"><br></p>
+<p class="p1"><span class="Apple-converted-space">      </span>function binarizeRegression(regData, T, P, threshold, neighbour) {</p>
+<p class="p1"><span class="Apple-converted-space">        </span>const binary = new Uint8Array(T * P);</p>
+<p class="p1"><span class="Apple-converted-space">        </span>const shift = new Float32Array(T * P);</p>
+<p class="p2"><br></p>
+<p class="p1"><span class="Apple-converted-space">        </span>for (let k = 0; k &lt; P; k++) {</p>
+<p class="p1"><span class="Apple-converted-space">          </span>for (let n = neighbour; n &lt; T - neighbour; n++) {</p>
+<p class="p1"><span class="Apple-converted-space">            </span>const idx = n * P + k;</p>
+<p class="p1"><span class="Apple-converted-space">            </span>const xn = regData[idx];</p>
+<p class="p1"><span class="Apple-converted-space">            </span>if (xn &lt;= threshold) continue;</p>
+<p class="p1"><span class="Apple-converted-space">            </span>if (!isMonotonicNeighbour(regData, T, P, k, n, neighbour)) continue;</p>
+<p class="p2"><br></p>
+<p class="p1"><span class="Apple-converted-space">            </span>binary[idx] = 1;</p>
+<p class="p2"><br></p>
+<p class="p1"><span class="Apple-converted-space">            </span>const xnm1 = regData[(n - 1) * P + k];</p>
+<p class="p1"><span class="Apple-converted-space">            </span>const xnp1 = regData[(n + 1) * P + k];</p>
+<p class="p1"><span class="Apple-converted-space">            </span>let s;</p>
+<p class="p1"><span class="Apple-converted-space">            </span>if (xnm1 &gt; xnp1) {</p>
+<p class="p1"><span class="Apple-converted-space">              </span>s = (xnp1 - xnm1) / (xn - xnp1) / 2;</p>
+<p class="p1"><span class="Apple-converted-space">            </span>} else {</p>
+<p class="p1"><span class="Apple-converted-space">              </span>s = (xnp1 - xnm1) / (xn - xnm1) / 2;</p>
+<p class="p1"><span class="Apple-converted-space">            </span>}</p>
+<p class="p1"><span class="Apple-converted-space">            </span>shift[idx] = s;</p>
+<p class="p1"><span class="Apple-converted-space">          </span>}</p>
+<p class="p1"><span class="Apple-converted-space">        </span>}</p>
+<p class="p2"><br></p>
+<p class="p1"><span class="Apple-converted-space">        </span>return { binary, shift };</p>
+<p class="p1"><span class="Apple-converted-space">      </span>}</p>
+<p class="p2"><br></p>
+<p class="p1"><span class="Apple-converted-space">      </span>// --- Note detection from regression (port of note_detection_with_onset_offset_regress) ---</p>
+<p class="p1"><span class="Apple-converted-space">      </span>function detectNotesFromRegression({</p>
+<p class="p1"><span class="Apple-converted-space">        </span>frameData,</p>
+<p class="p1"><span class="Apple-converted-space">        </span>onsetBin,</p>
+<p class="p1"><span class="Apple-converted-space">        </span>onsetShift,</p>
+<p class="p1"><span class="Apple-converted-space">        </span>offsetBin,</p>
+<p class="p1"><span class="Apple-converted-space">        </span>offsetShift,</p>
+<p class="p1"><span class="Apple-converted-space">        </span>velData,</p>
+<p class="p1"><span class="Apple-converted-space">        </span>T,</p>
+<p class="p1"><span class="Apple-converted-space">        </span>P,</p>
+<p class="p1"><span class="Apple-converted-space">        </span>frameThreshold</p>
+<p class="p1"><span class="Apple-converted-space">      </span>}) {</p>
+<p class="p1"><span class="Apple-converted-space">        </span>const tuples = []; // {bgn, fin, onsetShift, offsetShift, vel, pitchIndex}</p>
+<p class="p2"><br></p>
+<p class="p1"><span class="Apple-converted-space">        </span>for (let p = 0; p &lt; P; p++) {</p>
+<p class="p1"><span class="Apple-converted-space">          </span>let bgn = null;</p>
+<p class="p1"><span class="Apple-converted-space">          </span>let frameDisappear = null;</p>
+<p class="p1"><span class="Apple-converted-space">          </span>let offsetOccur = null;</p>
+<p class="p2"><br></p>
+<p class="p1"><span class="Apple-converted-space">          </span>for (let t = 0; t &lt; T; t++) {</p>
+<p class="p1"><span class="Apple-converted-space">            </span>const idx = t * P + p;</p>
+<p class="p2"><br></p>
+<p class="p1"><span class="Apple-converted-space">            </span>if (onsetBin[idx] === 1) {</p>
+<p class="p1"><span class="Apple-converted-space">              </span>if (bgn != null) {</p>
+<p class="p1"><span class="Apple-converted-space">                </span>const fin = Math.max(t - 1, 0);</p>
+<p class="p1"><span class="Apple-converted-space">                </span>const bIdx = bgn * P + p;</p>
+<p class="p1"><span class="Apple-converted-space">                </span>tuples.push({</p>
+<p class="p1"><span class="Apple-converted-space">                  </span>bgn,</p>
+<p class="p1"><span class="Apple-converted-space">                  </span>fin,</p>
+<p class="p1"><span class="Apple-converted-space">                  </span>onsetShift: onsetShift[bIdx],</p>
+<p class="p1"><span class="Apple-converted-space">                  </span>offsetShift: 0,</p>
+<p class="p1"><span class="Apple-converted-space">                  </span>vel: velData ? velData[bIdx] : 0.5,</p>
+<p class="p1"><span class="Apple-converted-space">                  </span>pitchIndex: p</p>
+<p class="p1"><span class="Apple-converted-space">                </span>});</p>
+<p class="p1"><span class="Apple-converted-space">                </span>frameDisappear = null;</p>
+<p class="p1"><span class="Apple-converted-space">                </span>offsetOccur = null;</p>
+<p class="p1"><span class="Apple-converted-space">              </span>}</p>
+<p class="p1"><span class="Apple-converted-space">              </span>bgn = t;</p>
+<p class="p1"><span class="Apple-converted-space">            </span>}</p>
+<p class="p2"><br></p>
+<p class="p1"><span class="Apple-converted-space">            </span>if (bgn != null &amp;&amp; t &gt; bgn) {</p>
+<p class="p1"><span class="Apple-converted-space">              </span>const fVal = frameData[idx];</p>
+<p class="p2"><br></p>
+<p class="p1"><span class="Apple-converted-space">              </span>if (fVal &lt;= frameThreshold &amp;&amp; frameDisappear == null) {</p>
+<p class="p1"><span class="Apple-converted-space">                </span>frameDisappear = t;</p>
+<p class="p1"><span class="Apple-converted-space">              </span>}</p>
+<p class="p1"><span class="Apple-converted-space">              </span>if (offsetBin[idx] === 1 &amp;&amp; offsetOccur == null) {</p>
+<p class="p1"><span class="Apple-converted-space">                </span>offsetOccur = t;</p>
+<p class="p1"><span class="Apple-converted-space">              </span>}</p>
+<p class="p2"><br></p>
+<p class="p1"><span class="Apple-converted-space">              </span>if (frameDisappear != null) {</p>
+<p class="p1"><span class="Apple-converted-space">                </span>let fin;</p>
+<p class="p1"><span class="Apple-converted-space">                </span>if (offsetOccur != null &amp;&amp; offsetOccur - bgn &gt; frameDisappear - offsetOccur) {</p>
+<p class="p1"><span class="Apple-converted-space">                  </span>fin = offsetOccur;</p>
+<p class="p1"><span class="Apple-converted-space">                </span>} else {</p>
+<p class="p1"><span class="Apple-converted-space">                  </span>fin = frameDisappear;</p>
+<p class="p1"><span class="Apple-converted-space">                </span>}</p>
+<p class="p1"><span class="Apple-converted-space">                </span>const bIdx = bgn * P + p;</p>
+<p class="p1"><span class="Apple-converted-space">                </span>const fIdx = fin * P + p;</p>
+<p class="p1"><span class="Apple-converted-space">                </span>tuples.push({</p>
+<p class="p1"><span class="Apple-converted-space">                  </span>bgn,</p>
+<p class="p1"><span class="Apple-converted-space">                  </span>fin,</p>
+<p class="p1"><span class="Apple-converted-space">                  </span>onsetShift: onsetShift[bIdx],</p>
+<p class="p1"><span class="Apple-converted-space">                  </span>offsetShift: offsetShift[fIdx],</p>
+<p class="p1"><span class="Apple-converted-space">                  </span>vel: velData ? velData[bIdx] : 0.5,</p>
+<p class="p1"><span class="Apple-converted-space">                  </span>pitchIndex: p</p>
+<p class="p1"><span class="Apple-converted-space">                </span>});</p>
+<p class="p1"><span class="Apple-converted-space">                </span>bgn = null;</p>
+<p class="p1"><span class="Apple-converted-space">                </span>frameDisappear = null;</p>
+<p class="p1"><span class="Apple-converted-space">                </span>offsetOccur = null;</p>
+<p class="p1"><span class="Apple-converted-space">              </span>}</p>
+<p class="p2"><br></p>
+<p class="p1"><span class="Apple-converted-space">              </span>// Safety: if still on for too long or at last frame</p>
+<p class="p1"><span class="Apple-converted-space">              </span>if (bgn != null &amp;&amp; (t - bgn &gt;= 600 || t === T - 1)) {</p>
+<p class="p1"><span class="Apple-converted-space">                </span>const fin = t;</p>
+<p class="p1"><span class="Apple-converted-space">                </span>const bIdx = bgn * P + p;</p>
+<p class="p1"><span class="Apple-converted-space">                </span>const fIdx = fin * P + p;</p>
+<p class="p1"><span class="Apple-converted-space">                </span>tuples.push({</p>
+<p class="p1"><span class="Apple-converted-space">                  </span>bgn,</p>
+<p class="p1"><span class="Apple-converted-space">                  </span>fin,</p>
+<p class="p1"><span class="Apple-converted-space">                  </span>onsetShift: onsetShift[bIdx],</p>
+<p class="p1"><span class="Apple-converted-space">                  </span>offsetShift: offsetShift[fIdx],</p>
+<p class="p1"><span class="Apple-converted-space">                  </span>vel: velData ? velData[bIdx] : 0.5,</p>
+<p class="p1"><span class="Apple-converted-space">                  </span>pitchIndex: p</p>
+<p class="p1"><span class="Apple-converted-space">                </span>});</p>
+<p class="p1"><span class="Apple-converted-space">                </span>bgn = null;</p>
+<p class="p1"><span class="Apple-converted-space">                </span>frameDisappear = null;</p>
+<p class="p1"><span class="Apple-converted-space">                </span>offsetOccur = null;</p>
+<p class="p1"><span class="Apple-converted-space">              </span>}</p>
+<p class="p1"><span class="Apple-converted-space">            </span>}</p>
+<p class="p1"><span class="Apple-converted-space">          </span>}</p>
+<p class="p1"><span class="Apple-converted-space">        </span>}</p>
+<p class="p2"><br></p>
+<p class="p1"><span class="Apple-converted-space">        </span>const notes = [];</p>
+<p class="p1"><span class="Apple-converted-space">        </span>for (const t of tuples) {</p>
+<p class="p1"><span class="Apple-converted-space">          </span>const onsetTime = (t.bgn + t.onsetShift) / FRAMES_PER_SEC;</p>
+<p class="p1"><span class="Apple-converted-space">          </span>const offsetTime = (t.fin + t.offsetShift) / FRAMES_PER_SEC;</p>
+<p class="p1"><span class="Apple-converted-space">          </span>const dur = Math.max(offsetTime - onsetTime, MIN_DUR);</p>
+<p class="p1"><span class="Apple-converted-space">          </span>notes.push({</p>
+<p class="p1"><span class="Apple-converted-space">            </span>midi: 21 + t.pitchIndex,</p>
+<p class="p1"><span class="Apple-converted-space">            </span>start: onsetTime,</p>
+<p class="p1"><span class="Apple-converted-space">            </span>duration: dur,</p>
+<p class="p1"><span class="Apple-converted-space">            </span>velocity: Math.min(1, Math.max(0, t.vel))</p>
+<p class="p1"><span class="Apple-converted-space">          </span>});</p>
+<p class="p1"><span class="Apple-converted-space">        </span>}</p>
+<p class="p2"><br></p>
+<p class="p1"><span class="Apple-converted-space">        </span>notes.sort((a, b) =&gt; a.start - b.start);</p>
+<p class="p1"><span class="Apple-converted-space">        </span>return notes;</p>
+<p class="p1"><span class="Apple-converted-space">      </span>}</p>
+<p class="p2"><br></p>
+<p class="p1"><span class="Apple-converted-space">      </span>// --- Pedal detection (port of pedal_detection_with_onset_offset_regress) ---</p>
+<p class="p1"><span class="Apple-converted-space">      </span>function detectPedalsFromRegression({ frameData, offsetBin, offsetShift, T, frameThreshold }) {</p>
+<p class="p1"><span class="Apple-converted-space">        </span>const tuples = []; // [bgn, fin, onset_shift(=0), offset_shift]</p>
+<p class="p1"><span class="Apple-converted-space">        </span>let bgn = null;</p>
+<p class="p1"><span class="Apple-converted-space">        </span>let frameDisappear = null;</p>
+<p class="p1"><span class="Apple-converted-space">        </span>let offsetOccur = null;</p>
+<p class="p2"><br></p>
+<p class="p1"><span class="Apple-converted-space">        </span>for (let i = 1; i &lt; T; i++) {</p>
+<p class="p1"><span class="Apple-converted-space">          </span>const fNow = frameData[i];</p>
+<p class="p1"><span class="Apple-converted-space">          </span>const fPrev = frameData[i - 1];</p>
+<p class="p2"><br></p>
+<p class="p1"><span class="Apple-converted-space">          </span>// Pedal onset: frame rises above threshold and is increasing</p>
+<p class="p1"><span class="Apple-converted-space">          </span>if (fNow &gt;= frameThreshold &amp;&amp; fNow &gt; fPrev) {</p>
+<p class="p1"><span class="Apple-converted-space">            </span>if (bgn == null) {</p>
+<p class="p1"><span class="Apple-converted-space">              </span>bgn = i;</p>
+<p class="p1"><span class="Apple-converted-space">            </span>}</p>
+<p class="p1"><span class="Apple-converted-space">          </span>}</p>
+<p class="p2"><br></p>
+<p class="p1"><span class="Apple-converted-space">          </span>if (bgn != null &amp;&amp; i &gt; bgn) {</p>
+<p class="p1"><span class="Apple-converted-space">            </span>if (fNow &lt;= frameThreshold &amp;&amp; frameDisappear == null) {</p>
+<p class="p1"><span class="Apple-converted-space">              </span>frameDisappear = i;</p>
+<p class="p1"><span class="Apple-converted-space">            </span>}</p>
+<p class="p2"><br></p>
+<p class="p1"><span class="Apple-converted-space">            </span>if (offsetBin[i] === 1 &amp;&amp; offsetOccur == null) {</p>
+<p class="p1"><span class="Apple-converted-space">              </span>offsetOccur = i;</p>
+<p class="p1"><span class="Apple-converted-space">            </span>}</p>
+<p class="p2"><br></p>
+<p class="p1"><span class="Apple-converted-space">            </span>if (offsetOccur != null) {</p>
+<p class="p1"><span class="Apple-converted-space">              </span>const fin = offsetOccur;</p>
+<p class="p1"><span class="Apple-converted-space">              </span>const offShift = offsetShift[fin]; // single-class array</p>
+<p class="p1"><span class="Apple-converted-space">              </span>tuples.push([bgn, fin, 0.0, offShift]);</p>
+<p class="p1"><span class="Apple-converted-space">              </span>bgn = null;</p>
+<p class="p1"><span class="Apple-converted-space">              </span>frameDisappear = null;</p>
+<p class="p1"><span class="Apple-converted-space">              </span>offsetOccur = null;</p>
+<p class="p1"><span class="Apple-converted-space">            </span>}</p>
+<p class="p2"><br></p>
+<p class="p1"><span class="Apple-converted-space">            </span>if (frameDisappear != null &amp;&amp; i - frameDisappear &gt;= 10) {</p>
+<p class="p1"><span class="Apple-converted-space">              </span>const fin = frameDisappear;</p>
+<p class="p1"><span class="Apple-converted-space">              </span>const offShift = offsetShift[fin];</p>
+<p class="p1"><span class="Apple-converted-space">              </span>tuples.push([bgn, fin, 0.0, offShift]);</p>
+<p class="p1"><span class="Apple-converted-space">              </span>bgn = null;</p>
+<p class="p1"><span class="Apple-converted-space">              </span>frameDisappear = null;</p>
+<p class="p1"><span class="Apple-converted-space">              </span>offsetOccur = null;</p>
+<p class="p1"><span class="Apple-converted-space">            </span>}</p>
+<p class="p1"><span class="Apple-converted-space">          </span>}</p>
+<p class="p1"><span class="Apple-converted-space">        </span>}</p>
+<p class="p2"><br></p>
+<p class="p1"><span class="Apple-converted-space">        </span>// Sort by onset</p>
+<p class="p1"><span class="Apple-converted-space">        </span>tuples.sort((a, b) =&gt; a[0] - b[0]);</p>
+<p class="p2"><br></p>
+<p class="p1"><span class="Apple-converted-space">        </span>// Convert to time-based events</p>
+<p class="p1"><span class="Apple-converted-space">        </span>const pedals = tuples.map(([bgnIdx, finIdx, onsetShift, offsetShiftVal]) =&gt; {</p>
+<p class="p1"><span class="Apple-converted-space">          </span>const onsetTime = (bgnIdx + onsetShift) / FRAMES_PER_SEC;</p>
+<p class="p1"><span class="Apple-converted-space">          </span>const offsetTime = (finIdx + offsetShiftVal) / FRAMES_PER_SEC;</p>
+<p class="p1"><span class="Apple-converted-space">          </span>return { onset: onsetTime, offset: offsetTime };</p>
+<p class="p1"><span class="Apple-converted-space">        </span>});</p>
+<p class="p2"><br></p>
+<p class="p1"><span class="Apple-converted-space">        </span>return pedals;</p>
+<p class="p1"><span class="Apple-converted-space">      </span>}</p>
+<p class="p1"><span class="Apple-converted-space">    </span>&lt;/script&gt;</p>
+<p class="p1"><span class="Apple-converted-space">  </span>&lt;/body&gt;</p>
+<p class="p1">&lt;/html&gt;</p>
+</body>
+</html>

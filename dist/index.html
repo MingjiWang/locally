@@ -1,0 +1,798 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>L.A26V1 Browser Kit</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@400;500;600;700&display=swap" />
+  <style>
+    :root {
+      /* Tactical-telemetry substrate (deactivated CRT, never pure black) */
+      --bg-1: #0a0a0b;
+      --bg-2: #0d0d0f;
+      --bg-3: #100f13;
+      /* Single hazard-red accent + one terminal-green live indicator */
+      --accent-1: #ff3b30;
+      --accent-2: #ff6a52;
+      --accent-3: #ff3b30;
+      --signal-green: #4af626;
+      --text-strong: #f4f3ef;
+      --text-body: #c7c6c0;
+      --text-soft: #7c7b73;
+      --glass-bg: rgba(255, 255, 255, 0.055);
+      --glass-border: rgba(255, 255, 255, 0.16);
+      --hairline: rgba(255, 255, 255, 0.12);
+      --radius-lg: 18px;
+      --radius-pill: 999px;
+      --font-display: "JetBrains Mono", "SF Mono", ui-monospace, "Menlo", monospace;
+      --font-mono: "JetBrains Mono", "SF Mono", ui-monospace, "Menlo", monospace;
+    }
+
+    * { box-sizing: border-box; }
+
+    html, body {
+      margin: 0;
+      padding: 0;
+      min-height: 100%;
+      color: var(--text-body);
+      font-family: var(--font-display);
+      -webkit-font-smoothing: antialiased;
+      -moz-osx-font-smoothing: grayscale;
+      background:
+        radial-gradient(1000px 650px at 14% -10%, rgba(255, 59, 48, 0.14), transparent 60%),
+        radial-gradient(820px 560px at 108% 8%, rgba(120, 130, 140, 0.14), transparent 65%),
+        radial-gradient(1200px 820px at 50% 122%, rgba(255, 106, 82, 0.08), transparent 60%),
+        linear-gradient(165deg, var(--bg-1), var(--bg-2) 45%, var(--bg-3));
+      background-attachment: fixed;
+      overflow-x: hidden;
+    }
+
+    /* CRT scanline wash: brutalist telemetry texture that also gives the
+       glass bezels high-frequency content to refract. */
+    body::after {
+      content: "";
+      position: fixed;
+      inset: 0;
+      z-index: -1;
+      pointer-events: none;
+      background: repeating-linear-gradient(
+        0deg,
+        transparent 0,
+        transparent 2px,
+        rgba(0, 0, 0, 0.16) 3px,
+        rgba(0, 0, 0, 0.16) 4px
+      );
+      opacity: 0.5;
+    }
+
+    /* Animated colored blobs + subtle grid that drift behind the glass
+       so refraction at the bezel actually has high-frequency content
+       to warp. */
+    .bg-blobs {
+      position: fixed;
+      inset: 0;
+      z-index: -1;
+      overflow: hidden;
+      pointer-events: none;
+    }
+    .bg-blob {
+      position: absolute;
+      border-radius: 50%;
+      filter: blur(40px);
+      opacity: 0.85;
+      animation: float 22s ease-in-out infinite;
+      mix-blend-mode: screen;
+    }
+    .bg-blob.b1 {
+      width: 520px; height: 520px; top: -120px; left: -120px;
+      background: radial-gradient(circle, #ff3b30 0%, #b3140c 35%, transparent 70%);
+      opacity: 0.5;
+    }
+    .bg-blob.b2 {
+      width: 420px; height: 420px; top: 40%; right: -120px;
+      background: radial-gradient(circle, #8a939c 0%, #4a5057 35%, transparent 70%);
+      animation-delay: -8s;
+      opacity: 0.4;
+    }
+    .bg-blob.b3 {
+      width: 460px; height: 460px; bottom: -160px; left: 30%;
+      background: radial-gradient(circle, #ff6a52 0%, #a12f1f 35%, transparent 70%);
+      animation-delay: -14s;
+      opacity: 0.4;
+    }
+    .bg-blob.b4 {
+      width: 360px; height: 360px; top: 12%; right: 30%;
+      background: radial-gradient(circle, #c9ccce 0%, #5a5f63 35%, transparent 70%);
+      animation-delay: -4s;
+      opacity: 0.35;
+    }
+    /* Blueprint grid: rigid engineered lines + registration dots. High
+       frequency so refraction at the glass bezels is unmistakable. */
+    .bg-grid {
+      position: fixed;
+      inset: 0;
+      z-index: -1;
+      pointer-events: none;
+      background-image:
+        linear-gradient(rgba(255,255,255,0.05) 1px, transparent 1px),
+        linear-gradient(90deg, rgba(255,255,255,0.05) 1px, transparent 1px),
+        radial-gradient(rgba(255,255,255,0.16) 1.2px, transparent 1.4px);
+      background-size: 88px 88px, 88px 88px, 88px 88px;
+      background-position: 0 0, 0 0, 0 0;
+      mask-image: radial-gradient(circle at 50% 45%, #000 30%, transparent 82%);
+      -webkit-mask-image: radial-gradient(circle at 50% 45%, #000 30%, transparent 82%);
+      opacity: 0.7;
+    }
+    @keyframes float {
+      0%, 100% { transform: translate(0, 0) scale(1); }
+      33%      { transform: translate(40px, -30px) scale(1.05); }
+      66%      { transform: translate(-30px, 40px) scale(0.97); }
+    }
+
+    .app {
+      max-width: 1180px;
+      margin: 0 auto;
+      padding: 28px clamp(16px, 4vw, 48px) 60px;
+      position: relative;
+    }
+
+    .brand {
+      display: flex;
+      align-items: flex-end;
+      justify-content: space-between;
+      gap: 16px;
+      padding-bottom: 14px;
+      margin-bottom: 22px;
+      border-bottom: 1px solid var(--hairline);
+    }
+
+    .brand-title {
+      display: flex;
+      align-items: baseline;
+      gap: 10px;
+      color: var(--text-strong);
+      font-family: var(--font-mono);
+      font-weight: 700;
+      font-size: clamp(1.15rem, 2.4vw, 1.7rem);
+      line-height: 0.95;
+      letter-spacing: 0.02em;
+      text-transform: uppercase;
+    }
+    .brand-title .reg {
+      color: var(--accent-1);
+      font-size: 0.5em;
+      transform: translateY(-0.6em);
+      font-weight: 500;
+    }
+
+    .brand-meta {
+      display: flex;
+      align-items: center;
+      gap: 14px;
+      font-family: var(--font-mono);
+      font-size: 10.5px;
+      letter-spacing: 0.14em;
+      text-transform: uppercase;
+      color: var(--text-soft);
+    }
+    .brand-meta .sep { color: var(--hairline); }
+    .brand-tag {
+      display: inline-flex;
+      align-items: center;
+      gap: 7px;
+      font-family: var(--font-mono);
+      font-size: 10.5px;
+      letter-spacing: 0.12em;
+      text-transform: uppercase;
+      color: var(--text-body);
+      padding: 5px 11px;
+      border-radius: 4px;
+      background: rgba(255, 59, 48, 0.10);
+      border: 1px solid rgba(255, 59, 48, 0.32);
+    }
+    .brand-tag .dot {
+      width: 6px; height: 6px; border-radius: 50%;
+      background: var(--signal-green);
+      box-shadow: 0 0 8px var(--signal-green);
+      animation: pulse 1.8s ease-in-out infinite;
+    }
+
+    /* ========== Liquid glass tab bar ========== */
+    .tabbar-wrap {
+      display: flex;
+      justify-content: center;
+      margin-bottom: 24px;
+    }
+
+    .tabbar {
+      position: relative;
+      display: inline-flex;
+      gap: 4px;
+      padding: 6px;
+      border-radius: var(--radius-pill);
+      background: rgba(255, 255, 255, 0.05);
+      backdrop-filter: blur(24px) saturate(180%);
+      -webkit-backdrop-filter: blur(24px) saturate(180%);
+      border: 1px solid var(--glass-border);
+      box-shadow:
+        inset 0 1px 0 rgba(255, 255, 255, 0.35),
+        inset 0 -1px 0 rgba(255, 255, 255, 0.06),
+        0 14px 40px rgba(0, 0, 0, 0.4);
+    }
+
+    .tabbar::before {
+      content: "";
+      position: absolute;
+      inset: 0;
+      border-radius: inherit;
+      pointer-events: none;
+      background: radial-gradient(220px 80px at 30% 0%, rgba(255,255,255,0.5), transparent 70%);
+      opacity: 0.45;
+    }
+
+    .tab-thumb {
+      position: absolute;
+      top: 6px;
+      left: 6px;
+      height: calc(100% - 12px);
+      width: 0;
+      border-radius: var(--radius-pill);
+      background: linear-gradient(180deg, rgba(255,255,255,0.22), rgba(255,255,255,0.08));
+      box-shadow:
+        inset 0 1px 0 rgba(255, 255, 255, 0.7),
+        inset 0 -1px 0 rgba(255, 255, 255, 0.1),
+        0 0 0 1px rgba(255, 59, 48, 0.25),
+        0 8px 22px rgba(0, 0, 0, 0.35);
+      transition: transform 0.45s cubic-bezier(0.34, 1.4, 0.64, 1),
+                  width 0.45s cubic-bezier(0.34, 1.4, 0.64, 1);
+      z-index: 0;
+      backdrop-filter: blur(18px) saturate(200%);
+      -webkit-backdrop-filter: blur(18px) saturate(200%);
+    }
+
+    .tab {
+      position: relative;
+      z-index: 1;
+      border: 0;
+      background: transparent;
+      color: var(--text-soft);
+      font-family: var(--font-mono);
+      font-size: 11.5px;
+      font-weight: 500;
+      letter-spacing: 0.14em;
+      text-transform: uppercase;
+      padding: 11px 22px;
+      border-radius: var(--radius-pill);
+      cursor: pointer;
+      transition: color 0.25s ease;
+      white-space: nowrap;
+    }
+    .tab:hover { color: var(--text-body); }
+    .tab.is-active { color: var(--text-strong); }
+
+    /* ========== Tool wrapper (transparent – the iframe's inner card
+       is the only visible glass panel) ========== */
+    .tool-window {
+      position: relative;
+      background: transparent;
+      border: 0;
+      box-shadow: none;
+      overflow: visible;
+    }
+
+    .panel {
+      display: none;
+      animation: fadeIn 0.3s ease;
+    }
+    .panel.is-active { display: block; }
+    @keyframes fadeIn {
+      from { opacity: 0; transform: translateY(4px); }
+      to   { opacity: 1; transform: translateY(0); }
+    }
+
+    .tool-frame {
+      width: 100%;
+      height: clamp(620px, calc(100vh - 520px), 1400px);
+      border: 0;
+      background: transparent;
+      display: block;
+    }
+    body.log-collapsed .tool-frame {
+      height: clamp(640px, calc(100vh - 280px), 1400px);
+    }
+
+    /* Placeholder shown while a lazy iframe is loading for the first time */
+    .panel-stage { position: relative; }
+    .panel-placeholder {
+      position: absolute;
+      inset: 0;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      gap: 18px;
+      border-radius: var(--radius-lg);
+      background: rgba(255, 255, 255, 0.05);
+      border: 1px solid var(--glass-border);
+      backdrop-filter: blur(20px) saturate(160%);
+      -webkit-backdrop-filter: blur(20px) saturate(160%);
+      color: var(--text-soft);
+      font-family: var(--font-mono);
+      font-size: 11px;
+      letter-spacing: 0.12em;
+      text-transform: uppercase;
+      box-shadow:
+        inset 0 1px 0 rgba(255, 255, 255, 0.22),
+        0 18px 50px rgba(0, 0, 0, 0.35);
+      transition: opacity 0.35s ease;
+      z-index: 1;
+    }
+    .panel-placeholder.is-hidden {
+      opacity: 0;
+      pointer-events: none;
+    }
+    .panel-spinner {
+      width: 38px;
+      height: 38px;
+      border-radius: 2px;
+      border: 2px solid rgba(255, 255, 255, 0.14);
+      border-top-color: var(--accent-1);
+      border-right-color: var(--accent-1);
+      animation: panel-spin 0.9s linear infinite;
+      box-shadow: 0 0 24px rgba(255, 59, 48, 0.25);
+    }
+    @keyframes panel-spin { to { transform: rotate(360deg); } }
+    .panel-placeholder-title {
+      color: var(--text-strong);
+      font-family: var(--font-display);
+      font-weight: 700;
+      letter-spacing: 0.02em;
+    }
+    .panel-placeholder-sub {
+      text-transform: none;
+      letter-spacing: 0;
+      font-family: var(--font-display);
+      font-size: 12px;
+      color: var(--text-soft);
+      max-width: 320px;
+      text-align: center;
+      line-height: 1.5;
+    }
+
+    .footer {
+      margin-top: 20px;
+      padding-top: 14px;
+      border-top: 1px solid var(--hairline);
+      text-align: center;
+      color: var(--text-soft);
+      font-family: var(--font-mono);
+      font-size: 10.5px;
+      letter-spacing: 0.14em;
+      text-transform: uppercase;
+    }
+
+    /* ========== Shared persistent log (fixed bottom drawer) ========== */
+    body { padding-bottom: 320px; }
+    body.log-collapsed { padding-bottom: 96px; }
+
+    .shared-log-dock {
+      position: fixed;
+      left: 50%;
+      bottom: 18px;
+      transform: translateX(-50%);
+      width: min(1180px, calc(100vw - 32px));
+      z-index: 80;
+      pointer-events: none;
+    }
+
+    .shared-log-card {
+      pointer-events: auto;
+      position: relative;
+      border-radius: var(--radius-lg);
+      background: rgba(255, 255, 255, 0.06);
+      border: 1px solid var(--glass-border);
+      backdrop-filter: blur(22px) saturate(170%);
+      -webkit-backdrop-filter: blur(22px) saturate(170%);
+      box-shadow:
+        inset 0 1px 0 rgba(255, 255, 255, 0.28),
+        inset 0 -1px 0 rgba(255, 255, 255, 0.05),
+        0 24px 60px rgba(0, 0, 0, 0.55);
+      overflow: hidden;
+      transition: max-height 0.35s cubic-bezier(0.34, 1.2, 0.64, 1);
+      max-height: 320px;
+    }
+    body.log-collapsed .shared-log-card { max-height: 56px; }
+    /* Subtle top-light gloss so the card reads as a glass slab */
+    .shared-log-card::before {
+      content: "";
+      position: absolute;
+      inset: 0;
+      border-radius: inherit;
+      pointer-events: none;
+      background:
+        radial-gradient(420px 120px at 30% -20%, rgba(255,255,255,0.30), transparent 70%),
+        radial-gradient(220px 80px at 80% 120%, rgba(255,59,48,0.16), transparent 70%);
+      opacity: 0.7;
+    }
+
+    .shared-log-head {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      padding: 12px 18px;
+      border-bottom: 1px solid var(--glass-border);
+      background: rgba(255, 255, 255, 0.04);
+      position: relative;
+      z-index: 1;
+    }
+    body.log-collapsed .shared-log-head { border-bottom-color: transparent; }
+    .shared-log-title {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      color: var(--text-strong);
+      font-family: var(--font-mono);
+      font-size: 11px;
+      font-weight: 600;
+      letter-spacing: 0.16em;
+      text-transform: uppercase;
+    }
+    .shared-log-pill {
+      display: inline-flex;
+      align-items: center;
+      gap: 6px;
+      font-family: var(--font-mono);
+      font-size: 9.5px;
+      letter-spacing: 0.14em;
+      text-transform: uppercase;
+      padding: 3px 9px;
+      border-radius: 4px;
+      background: rgba(74, 246, 38, 0.12);
+      color: var(--signal-green);
+      border: 1px solid rgba(74, 246, 38, 0.32);
+    }
+    .shared-log-pill .pulse {
+      width: 6px; height: 6px; border-radius: 50%;
+      background: var(--signal-green);
+      box-shadow: 0 0 8px var(--signal-green);
+      animation: pulse 1.8s ease-in-out infinite;
+    }
+    @keyframes pulse {
+      0%,100% { opacity: 0.4; transform: scale(0.85); }
+      50%     { opacity: 1; transform: scale(1.1); }
+    }
+    .shared-log-actions { display: flex; gap: 8px; }
+    .shared-log-btn {
+      border: 1px solid var(--glass-border);
+      background: rgba(255, 255, 255, 0.06);
+      color: var(--text-body);
+      font-family: var(--font-mono);
+      font-size: 10px;
+      font-weight: 500;
+      letter-spacing: 0.12em;
+      text-transform: uppercase;
+      padding: 6px 13px;
+      border-radius: 4px;
+      cursor: pointer;
+      transition: background 0.15s ease, transform 0.15s ease, color 0.15s ease;
+    }
+    .shared-log-btn:hover { background: rgba(255, 255, 255, 0.12); color: var(--text-strong); transform: translateY(-1px); }
+    .shared-log-body {
+      max-height: 260px;
+      min-height: 120px;
+      overflow-y: auto;
+      padding: 14px 18px;
+      margin: 0;
+      font-family: var(--font-mono);
+      font-size: 12px;
+      line-height: 1.6;
+      color: var(--text-body);
+      white-space: pre-wrap;
+      scrollbar-width: thin;
+      scrollbar-color: rgba(255,255,255,0.3) transparent;
+      position: relative;
+      z-index: 1;
+    }
+    body.log-collapsed .shared-log-body { display: none; }
+    .shared-log-body::-webkit-scrollbar { width: 8px; }
+    .shared-log-body::-webkit-scrollbar-thumb { background: rgba(255,255,255,0.2); border-radius: 999px; }
+    .shared-log-line { display: block; }
+    .shared-log-line .time { color: var(--text-soft); }
+    .shared-log-line .tag {
+      display: inline-block;
+      min-width: 82px;
+      padding: 0 8px;
+      margin: 0 8px;
+      border-radius: 3px;
+      font-size: 10px;
+      letter-spacing: 0.1em;
+      text-transform: uppercase;
+      text-align: center;
+    }
+    .shared-log-line .tag.media    { background: rgba(255, 59, 48, 0.16); color: var(--accent-2); border: 1px solid rgba(255, 59, 48, 0.34); }
+    .shared-log-line .tag.piano    { background: rgba(180, 190, 200, 0.14); color: #cfd3d6; border: 1px solid rgba(180, 190, 200, 0.30); }
+    .shared-log-line .tag.analyzer { background: rgba(140, 150, 160, 0.14); color: #b6bbbf; border: 1px solid rgba(140, 150, 160, 0.30); }
+    .shared-log-line .tag.transfer { background: rgba(52, 199, 89, 0.14); color: #7ee29a; border: 1px solid rgba(52, 199, 89, 0.32); }
+    .shared-log-line .tag.tool     { background: rgba(255,255,255,0.08); color: var(--text-soft); border: 1px solid var(--glass-border); }
+    .shared-log-empty { color: var(--text-soft); font-family: var(--font-mono); font-size: 11px; letter-spacing: 0.08em; padding: 22px 0; text-align: center; }
+  </style>
+</head>
+<body>
+  <div class="bg-blobs" aria-hidden="true">
+    <div class="bg-blob b1"></div>
+    <div class="bg-blob b2"></div>
+    <div class="bg-blob b3"></div>
+    <div class="bg-blob b4"></div>
+  </div>
+  <div class="bg-grid" aria-hidden="true"></div>
+
+  <div class="app">
+    <div class="brand">
+      <div class="brand-title">
+        <span>L.A26V1 Browser Kit</span>
+      </div>
+      <div class="brand-meta">
+        <span>Unit / LT-03</span>
+        <span class="sep">///</span>
+        <span>No Uplink</span>
+        <span class="sep">///</span>
+        <span class="brand-tag"><span class="dot"></span>On Device</span>
+      </div>
+    </div>
+
+    <div class="tabbar-wrap">
+      <div class="tabbar lg-pill" role="tablist" aria-label="Tools">
+        <span class="tab-thumb" aria-hidden="true"></span>
+        <button class="tab is-active lg-skip" data-tab="media" role="tab" aria-selected="true">Converter</button>
+        <button class="tab lg-skip" data-tab="piano" role="tab" aria-selected="false">Transcribe</button>
+        <button class="tab lg-skip" data-tab="analyzer" role="tab" aria-selected="false">Loudness</button>
+        <button class="tab lg-skip" data-tab="transfer" role="tab" aria-selected="false">Transfer</button>
+        <button class="tab lg-skip" data-tab="guide" role="tab" aria-selected="false">Guide</button>
+      </div>
+    </div>
+
+    <div class="tool-window">
+      <section class="panel is-active" data-panel="media" role="tabpanel">
+        <div class="panel-stage">
+          <iframe class="tool-frame" title="Media Converter" src="./media-converter-clean.html?v=7" loading="eager"></iframe>
+        </div>
+      </section>
+      <section class="panel" data-panel="piano" role="tabpanel">
+        <div class="panel-stage">
+          <iframe class="tool-frame" title="Piano Transcription" data-src="./piano-transcription-clean.html?v=7"></iframe>
+          <div class="panel-placeholder" data-placeholder>
+            <div class="panel-spinner"></div>
+            <div class="panel-placeholder-title">Loading Piano Transcription</div>
+            <div class="panel-placeholder-sub">Initialising ONNX Runtime and the transcription model in your browser&hellip;</div>
+          </div>
+        </div>
+      </section>
+      <section class="panel" data-panel="analyzer" role="tabpanel">
+        <div class="panel-stage">
+          <iframe class="tool-frame" title="Loudness Analyzer" data-src="./loudness-analyzer-clean.html?v=7"></iframe>
+          <div class="panel-placeholder" data-placeholder>
+            <div class="panel-spinner"></div>
+            <div class="panel-placeholder-title">Loading Loudness Analyzer</div>
+            <div class="panel-placeholder-sub">Booting the Web Audio engine and MathJax renderer locally&hellip;</div>
+          </div>
+        </div>
+      </section>
+      <section class="panel" data-panel="transfer" role="tabpanel">
+        <div class="panel-stage">
+          <iframe class="tool-frame" title="File Transfer" data-src="./transfer.html?v=11"></iframe>
+          <div class="panel-placeholder" data-placeholder>
+            <div class="panel-spinner"></div>
+            <div class="panel-placeholder-title">Loading File Transfer</div>
+            <div class="panel-placeholder-sub">Preparing the peer-to-peer beam&hellip;</div>
+          </div>
+        </div>
+      </section>
+      <section class="panel" data-panel="guide" role="tabpanel">
+        <div class="panel-stage">
+          <iframe class="tool-frame" title="Guide" data-src="./guide.html?v=8"></iframe>
+          <div class="panel-placeholder" data-placeholder>
+            <div class="panel-spinner"></div>
+            <div class="panel-placeholder-title">Loading Guide</div>
+            <div class="panel-placeholder-sub">Opening the operating manual&hellip;</div>
+          </div>
+        </div>
+      </section>
+    </div>
+
+    <div class="footer">Local compute // WebAssembly + ONNX Runtime + Web Audio // Rev 2.6</div>
+  </div>
+
+  <div class="shared-log-dock" aria-label="Activity log">
+    <div class="shared-log-card lg-card">
+      <div class="shared-log-head">
+        <div class="shared-log-title">
+          <span>Activity Log</span>
+          <span class="shared-log-pill"><span class="pulse"></span> Live</span>
+        </div>
+        <div class="shared-log-actions">
+          <button class="shared-log-btn lg-skip" id="sharedLogClear" type="button">Clear</button>
+          <button class="shared-log-btn lg-skip" id="sharedLogToggle" type="button" aria-expanded="true">Hide</button>
+        </div>
+      </div>
+      <div class="shared-log-body" id="sharedLogBody">
+        <div class="shared-log-empty" id="sharedLogEmpty">&gt;&gt;&gt; Awaiting telemetry from active unit</div>
+      </div>
+    </div>
+  </div>
+
+  <script src="./liquid.js?v=7"></script>
+  <script>
+    // -------- Shared log receiver --------
+    (function () {
+      const body = document.getElementById("sharedLogBody");
+      const empty = document.getElementById("sharedLogEmpty");
+      const clearBtn = document.getElementById("sharedLogClear");
+      let lastSig = "";
+
+      function ts() {
+        const d = new Date();
+        const h = String(d.getHours()).padStart(2, "0");
+        const m = String(d.getMinutes()).padStart(2, "0");
+        const s = String(d.getSeconds()).padStart(2, "0");
+        return `${h}:${m}:${s}`;
+      }
+
+      function append(label, source, message) {
+        if (!message) return;
+        const sig = source + "|" + message;
+        if (sig === lastSig) return;
+        lastSig = sig;
+
+        if (empty && empty.parentNode === body) body.removeChild(empty);
+
+        const line = document.createElement("span");
+        line.className = "shared-log-line";
+
+        const t = document.createElement("span");
+        t.className = "time";
+        t.textContent = `[${ts()}]`;
+
+        const tag = document.createElement("span");
+        tag.className = `tag ${source || "tool"}`;
+        tag.textContent = label || "tool";
+
+        const msg = document.createElement("span");
+        msg.className = "msg";
+        msg.textContent = message;
+
+        line.appendChild(t);
+        line.appendChild(tag);
+        line.appendChild(msg);
+        line.appendChild(document.createTextNode("\n"));
+
+        body.appendChild(line);
+        body.scrollTop = body.scrollHeight;
+      }
+
+      window.addEventListener("message", (ev) => {
+        const d = ev.data;
+        if (!d) return;
+        if (d.type === "lg-log") {
+          append(d.label, d.source, d.message);
+        } else if (d.type === "lg-scroll") {
+          // Chain scroll from a child iframe: convert the raw deltas
+          // (px / line / page) into pixels and scroll the page.
+          let dx = d.deltaX || 0;
+          let dy = d.deltaY || 0;
+          const mode = d.deltaMode || 0;
+          if (mode === 1) { dx *= 16; dy *= 16; }            // lines
+          else if (mode === 2) { dx *= window.innerWidth; dy *= window.innerHeight; } // pages
+          window.scrollBy({ left: dx, top: dy, behavior: "auto" });
+        }
+      });
+
+      clearBtn.addEventListener("click", () => {
+        while (body.firstChild) body.removeChild(body.firstChild);
+        body.appendChild(empty);
+        lastSig = "";
+      });
+
+      const toggleBtn = document.getElementById("sharedLogToggle");
+      toggleBtn.addEventListener("click", () => {
+        const collapsed = document.body.classList.toggle("log-collapsed");
+        toggleBtn.textContent = collapsed ? "Show" : "Hide";
+        toggleBtn.setAttribute("aria-expanded", String(!collapsed));
+      });
+    })();
+  </script>
+  <script>
+    const tabs = Array.from(document.querySelectorAll(".tab"));
+    const panels = Array.from(document.querySelectorAll(".panel"));
+    const thumb = document.querySelector(".tab-thumb");
+
+    function moveThumb(activeTab) {
+      const tabbar = activeTab.parentElement;
+      const tabRect = activeTab.getBoundingClientRect();
+      const barRect = tabbar.getBoundingClientRect();
+      const x = tabRect.left - barRect.left - 6;
+      thumb.style.transform = `translateX(${x}px)`;
+      thumb.style.width = `${tabRect.width}px`;
+    }
+
+    // Lazy-mount an iframe inside a panel the first time it becomes active.
+    // The iframe carries data-src; we promote it to src on demand and fade
+    // out the loading placeholder once the iframe fires load.
+    function mountPanel(panel) {
+      const iframe = panel.querySelector("iframe[data-src]");
+      if (!iframe) return;
+      const placeholder = panel.querySelector("[data-placeholder]");
+      const url = iframe.getAttribute("data-src");
+      iframe.removeAttribute("data-src");
+      iframe.addEventListener("load", () => {
+        if (placeholder) {
+          placeholder.classList.add("is-hidden");
+          setTimeout(() => placeholder.remove(), 500);
+        }
+      }, { once: true });
+      iframe.src = url;
+    }
+
+    function activate(name, animate = true) {
+      const target = tabs.find(t => t.dataset.tab === name) || tabs[0];
+      tabs.forEach(t => {
+        const active = t === target;
+        t.classList.toggle("is-active", active);
+        t.setAttribute("aria-selected", String(active));
+      });
+      panels.forEach(p => {
+        const isActive = p.dataset.panel === target.dataset.tab;
+        p.classList.toggle("is-active", isActive);
+        if (isActive) mountPanel(p);
+      });
+      if (!animate) thumb.style.transition = "none";
+      moveThumb(target);
+      if (!animate) {
+        requestAnimationFrame(() => {
+          thumb.style.transition = "";
+        });
+      }
+    }
+
+    tabs.forEach(t => t.addEventListener("click", () => activate(t.dataset.tab)));
+    window.addEventListener("resize", () => {
+      const active = tabs.find(t => t.classList.contains("is-active"));
+      if (active) moveThumb(active);
+    });
+
+    // ---- QR deep link: ?tab=transfer&code=NNNNNN ----
+    // Opening a QR from the sender lands here; jump to the Transfer tab and
+    // hand the code to the tool once it reports ready.
+    const params = new URLSearchParams(location.search);
+    const deepCode = (params.get("code") || "").replace(/\D/g, "").slice(0, 6);
+    const deepTab = params.get("tab");
+    let pendingTransferCode = /^\d{6}$/.test(deepCode) ? deepCode : null;
+    const initialTab =
+      (deepTab && tabs.some(t => t.dataset.tab === deepTab)) ? deepTab
+      : (pendingTransferCode ? "transfer" : "media");
+
+    // When the Transfer tool signals readiness, deliver any queued code.
+    window.addEventListener("message", (ev) => {
+      if (ev.data && ev.data.type === "xfer-ready" && pendingTransferCode) {
+        try {
+          ev.source.postMessage(
+            { type: "xfer-prefill", code: pendingTransferCode }, "*"
+          );
+        } catch (_) { /* ignore */ }
+        pendingTransferCode = null;
+        // Clean the URL so a refresh doesn't retry a stale code.
+        history.replaceState(null, "", location.pathname);
+      }
+    });
+
+    // Set initial thumb position once fonts/layout settle
+    if (document.fonts && document.fonts.ready) {
+      document.fonts.ready.then(() => activate(initialTab, false));
+    } else {
+      window.addEventListener("load", () => activate(initialTab, false));
+    }
+    requestAnimationFrame(() => activate(initialTab, false));
+  </script>
+</body>
+</html>

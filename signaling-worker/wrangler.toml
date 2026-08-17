@@ -1,0 +1,20 @@
+name = "la26v1-signaling"
+main = "src/index.js"
+compatibility_date = "2025-08-01"
+
+# Origins allowed to use the broker (in addition to localhost + *.pages.dev,
+# which are always allowed). Add your custom domain(s) here.
+[vars]
+ALLOWED_HOSTS = "locally.audio,www.locally.audio"
+
+# The Durable Object is DEFINED here (standalone Worker). The Pages
+# project binds to it via `script_name = "la26v1-signaling"`.
+# `new_sqlite_classes` uses the SQLite-backed DO storage, which is
+# available on the free plan (the classic `new_classes` requires paid).
+[[durable_objects.bindings]]
+name = "SIGNAL_ROOMS"
+class_name = "SignalRoom"
+
+[[migrations]]
+tag = "v1"
+new_sqlite_classes = ["SignalRoom"]

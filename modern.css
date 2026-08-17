@@ -1,0 +1,525 @@
+@import url("https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@400;500;600;700&display=swap");
+
+/* ------------------------------------------------------------------
+   Unified modern liquid-glass theme
+   Used by all three tool pages (media converter, piano, analyzer).
+   ------------------------------------------------------------------ */
+
+:root {
+  --bg-1: #0a0a0b;
+  --bg-2: #0d0d0f;
+  --bg-3: #100f13;
+  --accent-1: #ff3b30;
+  --accent-2: #ff6a52;
+  --accent-3: #ff3b30;
+  --signal-green: #4af626;
+  --text-strong: #f4f3ef;
+  --text-body: #c7c6c0;
+  --text-soft: #7c7b73;
+  --glass-bg: rgba(255, 255, 255, 0.055);
+  --glass-bg-strong: rgba(255, 255, 255, 0.1);
+  --glass-border: rgba(255, 255, 255, 0.16);
+  --glass-highlight: rgba(255, 255, 255, 0.6);
+  --glass-shadow: 0 18px 50px rgba(0, 0, 0, 0.5);
+  --hairline: rgba(255, 255, 255, 0.12);
+  --radius-lg: 18px;
+  --radius-md: 12px;
+  --radius-sm: 8px;
+  --font-display: "JetBrains Mono", "SF Mono", ui-monospace, "Menlo", monospace;
+  --font-mono: "JetBrains Mono", "SF Mono", ui-monospace, "Menlo", monospace;
+}
+
+* { box-sizing: border-box; }
+
+html, body {
+  margin: 0;
+  padding: 0;
+  min-height: 100%;
+  color: var(--text-body);
+  font-family: var(--font-display) !important;
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+  font-size: 14px;
+  line-height: 1.5;
+  /* Transparent so the parent (index.html) background shows through
+     the iframe seamlessly. */
+  background: transparent !important;
+}
+
+body {
+  padding: 0 !important;
+}
+
+/* Override pixel font from xp.css and inline styles in each tool page */
+body, .app, .app *, .window, .window *, .window-body, .window-body *,
+.title-bar, .title-bar *, .status-bar, .status-bar * {
+  font-family: var(--font-display) !important;
+  -webkit-font-smoothing: antialiased !important;
+}
+
+/* Technical metadata, labels, status + numeric readouts use mono */
+.section-title, .status-bar, .status-bar *, .metric-label, .badge,
+.title-bar-text, .subtitle, .small, .hint, .tag, .muted,
+.status-bar-field, th, .metric-value, .metric-sub {
+  font-family: var(--font-mono) !important;
+}
+
+/* App container */
+.app {
+  max-width: 1180px;
+  margin: 0 auto;
+}
+
+/* Reset xp.css window chrome to modern glass card.
+   Window has its own VIBRANT background with bold color blobs and a
+   visible dot grid, so glass elements inside can refract visible
+   content through their bezels. */
+.window {
+  position: relative;
+  background:
+    /* soft desaturated tactical glows (hazard red + steel) */
+    radial-gradient(900px 520px at 10% -8%, rgba(255, 59, 48, 0.30) 0%, rgba(255, 59, 48, 0.12) 30%, transparent 64%),
+    radial-gradient(780px 520px at 100% 106%, rgba(150, 160, 170, 0.24) 0%, rgba(150, 160, 170, 0.10) 30%, transparent 64%),
+    radial-gradient(720px 480px at 92% 4%, rgba(255, 106, 82, 0.16) 0%, transparent 60%),
+    /* deep radial base (lighter core, near-black edges) */
+    radial-gradient(1200px 900px at 50% 40%, #16161a 0%, #0d0d10 55%, #090909 100%);
+  border: 1px solid var(--glass-border);
+  border-radius: var(--radius-lg);
+  box-shadow:
+    inset 0 1px 0 rgba(255, 255, 255, 0.16),
+    inset 0 -1px 0 rgba(255, 255, 255, 0.05),
+    var(--glass-shadow);
+  overflow: hidden;
+  color: var(--text-body);
+}
+
+/* Halftone dot matrix that fades from the edges inward, giving the glass
+   bezels high-frequency content to refract without a rigid graph grid. */
+.window::before {
+  content: "";
+  position: absolute;
+  inset: 0;
+  background:
+    radial-gradient(rgba(255, 255, 255, 0.16) 1px, transparent 1.6px) 0 0 / 15px 15px,
+    radial-gradient(rgba(255, 255, 255, 0.10) 1px, transparent 1.4px) 7.5px 7.5px / 15px 15px;
+  -webkit-mask-image: radial-gradient(120% 110% at 50% 45%, transparent 30%, #000 92%);
+  mask-image: radial-gradient(120% 110% at 50% 45%, transparent 30%, #000 92%);
+  opacity: 0.7;
+  pointer-events: none;
+  z-index: 0;
+}
+
+/* Diagonal hazard sweep marker in the top-right corner */
+.window::after {
+  content: "";
+  position: absolute;
+  top: 0;
+  right: 0;
+  width: 220px;
+  height: 220px;
+  background: repeating-linear-gradient(
+    -45deg,
+    rgba(255, 59, 48, 0.10) 0,
+    rgba(255, 59, 48, 0.10) 8px,
+    transparent 8px,
+    transparent 20px
+  );
+  -webkit-mask-image: radial-gradient(circle at 100% 0%, #000 0%, transparent 72%);
+  mask-image: radial-gradient(circle at 100% 0%, #000 0%, transparent 72%);
+  pointer-events: none;
+  z-index: 0;
+}
+
+.window > * { position: relative; z-index: 1; }
+
+/* Modern title bar replaces XP chrome */
+.title-bar {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 18px 22px 6px;
+  background: transparent !important;
+  border: 0 !important;
+  color: var(--text-strong) !important;
+  min-height: 0 !important;
+  height: auto !important;
+}
+
+.title-bar-text {
+  font-size: 13px;
+  font-weight: 600;
+  letter-spacing: 0.16em;
+  text-transform: uppercase;
+  color: var(--text-strong) !important;
+  text-shadow: none !important;
+}
+
+/* Hide XP min/max/close buttons - not needed in modern look */
+.title-bar-controls { display: none !important; }
+
+/* Body of each tool page */
+.window-body {
+  background: transparent !important;
+  border: 0 !important;
+  margin: 0 !important;
+  padding: 16px 22px 22px !important;
+  color: var(--text-body) !important;
+  font-size: 14px;
+}
+
+.window-body p,
+.window-body li,
+.window-body label,
+.window-body span:not(.tag):not(.badge),
+.window-body div { color: var(--text-body); }
+
+.subtitle { color: var(--text-soft); margin: 4px 0 14px; font-size: 13px; }
+
+.section-title {
+  color: var(--accent-2) !important;
+  font-size: 11px !important;
+  font-weight: 700 !important;
+  letter-spacing: 0.14em !important;
+  text-transform: uppercase;
+  margin: 22px 0 10px !important;
+  text-shadow: none !important;
+}
+
+/* Modern status bar at bottom of each window */
+.status-bar {
+  display: flex;
+  gap: 18px;
+  padding: 12px 22px !important;
+  background: rgba(255, 255, 255, 0.04) !important;
+  border-top: 1px solid var(--glass-border) !important;
+  color: var(--text-soft) !important;
+}
+
+.status-bar-field {
+  font-size: 12px !important;
+  color: var(--text-soft) !important;
+  font-weight: 400 !important;
+  background: transparent !important;
+  border: 0 !important;
+  padding: 0 !important;
+  margin: 0 !important;
+  box-shadow: none !important;
+}
+
+/* Inputs / selects / textareas */
+input[type="text"],
+input[type="number"],
+input[type="file"],
+select,
+textarea {
+  background: var(--glass-bg) !important;
+  border: 1px solid var(--glass-border) !important;
+  border-radius: var(--radius-sm) !important;
+  padding: 8px 12px !important;
+  color: var(--text-body) !important;
+  font-size: 13px !important;
+  outline: none;
+  transition: border-color 0.15s ease, background 0.15s ease;
+  box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.1);
+}
+
+input[type="text"]:focus,
+input[type="number"]:focus,
+select:focus,
+textarea:focus {
+  border-color: rgba(255, 59, 48, 0.55) !important;
+  background: var(--glass-bg-strong) !important;
+}
+
+select option { background: #101013; color: var(--text-body); }
+
+/* Range slider */
+input[type="range"] {
+  -webkit-appearance: none;
+  appearance: none;
+  height: 6px;
+  background: rgba(255, 255, 255, 0.1);
+  border-radius: 999px;
+  outline: none;
+}
+input[type="range"]::-webkit-slider-thumb {
+  -webkit-appearance: none;
+  width: 15px;
+  height: 15px;
+  border-radius: 3px;
+  background: var(--accent-1);
+  border: 1px solid rgba(255, 255, 255, 0.5);
+  box-shadow: 0 4px 10px rgba(0, 0, 0, 0.4);
+  cursor: pointer;
+}
+input[type="range"]::-moz-range-thumb {
+  width: 15px;
+  height: 15px;
+  border: 1px solid rgba(255, 255, 255, 0.5);
+  border-radius: 3px;
+  background: var(--accent-1);
+  cursor: pointer;
+}
+
+/* Buttons - liquid glass capsule */
+button {
+  position: relative;
+  border: 1px solid var(--glass-border) !important;
+  background: var(--glass-bg) !important;
+  color: var(--text-strong) !important;
+  font-family: var(--font-mono) !important;
+  font-size: 11px;
+  font-weight: 500;
+  letter-spacing: 0.1em;
+  text-transform: uppercase;
+  padding: 10px 17px !important;
+  border-radius: 999px !important;
+  cursor: pointer;
+  backdrop-filter: blur(10px);
+  -webkit-backdrop-filter: blur(10px);
+  box-shadow:
+    inset 0 1px 0 rgba(255, 255, 255, 0.35),
+    inset 0 -1px 0 rgba(255, 255, 255, 0.05),
+    0 6px 18px rgba(0, 0, 0, 0.35);
+  transition: transform 0.15s ease, background 0.15s ease, box-shadow 0.2s ease;
+}
+button:hover:not(:disabled) {
+  background: rgba(255, 255, 255, 0.12) !important;
+  transform: translateY(-1px);
+  box-shadow:
+    inset 0 1px 0 rgba(255, 255, 255, 0.5),
+    inset 0 -1px 0 rgba(255, 255, 255, 0.08),
+    0 10px 24px rgba(0, 0, 0, 0.45);
+}
+button:active:not(:disabled) { transform: translateY(0); }
+button:disabled { opacity: 0.45; cursor: not-allowed; }
+
+/* Drop zones */
+.drop-zone {
+  border: 1px dashed rgba(255, 255, 255, 0.25) !important;
+  background: rgba(255, 255, 255, 0.04) !important;
+  border-radius: var(--radius-md) !important;
+  padding: 22px 16px !important;
+  text-align: center;
+  color: var(--text-body);
+  cursor: pointer;
+  transition: background 0.15s ease, border-color 0.15s ease, transform 0.15s ease;
+  box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.08);
+}
+.drop-zone:hover {
+  background: rgba(255, 59, 48, 0.07) !important;
+  border-color: rgba(255, 59, 48, 0.45) !important;
+}
+.drop-zone--hover {
+  background: rgba(255, 59, 48, 0.11) !important;
+  border-color: rgba(255, 59, 48, 0.6) !important;
+  transform: scale(1.005);
+}
+.drop-zone strong { color: var(--text-strong); font-weight: 600; }
+
+/* Logs / pre / monitor */
+#log, pre {
+  background: rgba(255, 255, 255, 0.04) !important;
+  border: 1px solid var(--glass-border) !important;
+  border-radius: var(--radius-md) !important;
+  color: var(--text-body) !important;
+  font-family: var(--font-mono) !important;
+  font-size: 12.5px !important;
+  padding: 12px 14px !important;
+  white-space: pre-wrap;
+  box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.06);
+}
+#log { height: 220px !important; overflow-y: auto; }
+
+/* Metric cards (analyzer) */
+.metric, .meter-block, .helpbox {
+  background: var(--glass-bg) !important;
+  border: 1px solid var(--glass-border) !important;
+  border-radius: var(--radius-md) !important;
+  padding: 12px 14px !important;
+  color: var(--text-body) !important;
+  box-shadow:
+    inset 0 1px 0 rgba(255, 255, 255, 0.1),
+    0 6px 16px rgba(0, 0, 0, 0.25);
+}
+.metric-label {
+  font-size: 10px !important;
+  color: var(--text-soft) !important;
+  text-transform: uppercase;
+  letter-spacing: 0.1em;
+}
+.metric-value {
+  color: var(--text-strong) !important;
+  font-size: 18px !important;
+  font-weight: 600;
+  margin-top: 4px;
+}
+.metric-sub { font-size: 11px !important; color: var(--text-soft) !important; }
+
+/* Math collapsible blocks (analyzer) */
+.math-block {
+  background: rgba(255, 255, 255, 0.04) !important;
+  border: 1px solid var(--glass-border) !important;
+  border-radius: var(--radius-md) !important;
+  padding: 0 !important;
+  position: relative;
+  overflow: hidden;
+  margin: 12px 0 !important;
+}
+.math-block::before {
+  opacity: 0.18 !important;
+  filter: saturate(120%);
+}
+.math-block > summary {
+  background: rgba(255, 255, 255, 0.06) !important;
+  color: var(--accent-2) !important;
+  font-size: 11px !important;
+  letter-spacing: 0.14em;
+  padding: 12px 16px !important;
+  margin: 0 !important;
+  border-bottom: 1px solid var(--glass-border) !important;
+  cursor: pointer;
+}
+.math-block > *:not(summary) { padding: 4px 16px; }
+.math-block > p:last-child { padding-bottom: 12px; }
+
+/* Tables */
+table {
+  width: 100%;
+  border-collapse: collapse;
+  font-size: 13px;
+  margin-top: 6px;
+  overflow: hidden;
+  border-radius: var(--radius-md);
+}
+th, td {
+  background: rgba(255, 255, 255, 0.04) !important;
+  border: 0 !important;
+  border-bottom: 1px solid var(--glass-border) !important;
+  padding: 8px 12px !important;
+  color: var(--text-body) !important;
+}
+th { color: var(--accent-2) !important; font-weight: 600; text-align: left; }
+tr:nth-child(even) td { background: rgba(255, 255, 255, 0.02) !important; }
+.penalty-pos { color: #fb923c !important; font-weight: 600; }
+.penalty-neg, .penalty-zero { color: #6ee7b7 !important; font-weight: 600; }
+
+/* Bar meters */
+.bar-bg {
+  background: rgba(255, 255, 255, 0.05) !important;
+  border: 1px solid var(--glass-border) !important;
+  border-radius: 999px !important;
+  height: 8px !important;
+  overflow: hidden;
+}
+.bar-fill {
+  background: linear-gradient(90deg, #34d399, #f59e0b, #ef4444) !important;
+  height: 100% !important;
+  border-radius: 999px !important;
+}
+
+/* Canvases */
+canvas {
+  width: 100%;
+  background: rgba(0, 0, 0, 0.45) !important;
+  border: 1px solid var(--glass-border) !important;
+  border-radius: var(--radius-md) !important;
+  box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.05);
+}
+#loudness-curve { background: rgba(255, 255, 255, 0.06) !important; }
+
+/* Badges */
+.badge {
+  background: rgba(255, 59, 48, 0.14) !important;
+  color: var(--accent-2) !important;
+  border: 1px solid rgba(255, 59, 48, 0.34) !important;
+  border-radius: 4px !important;
+  padding: 2px 9px !important;
+  font-size: 10px !important;
+  letter-spacing: 0.1em;
+  text-transform: uppercase;
+}
+
+/* Misc small text styles */
+.small, .hint, .tag, .footer-note, .heatmap-caption, .desc, .muted {
+  color: var(--text-soft) !important;
+  font-size: 12px !important;
+}
+
+/* ------------------------------------------------------------------
+   Streamlined UX: hide long-form explanatory copy inside the tools.
+   Functional labels (.small), controls, inputs, buttons and result
+   readouts stay visible.
+   ------------------------------------------------------------------ */
+.subtitle,
+.hint,
+.desc,
+.helpbox,
+.footer-note,
+ol.small,
+.math-block { display: none !important; }
+
+/* Links */
+a { color: var(--accent-1); text-decoration: none; }
+a:hover { color: var(--accent-2); text-decoration: underline; }
+
+/* Code */
+code {
+  background: rgba(255, 255, 255, 0.07);
+  padding: 1px 6px;
+  border-radius: 6px;
+  font-family: "JetBrains Mono", "SF Mono", "Menlo", monospace;
+  font-size: 12.5px;
+  color: var(--accent-2);
+}
+
+/* Field row spacing */
+.field-row { margin-bottom: 10px; }
+.row { display: flex; gap: 10px; flex-wrap: wrap; align-items: center; }
+.controls-row { display: flex; gap: 10px; flex-wrap: wrap; align-items: center; margin: 8px 0 4px; }
+
+/* Two column layout used by media converter & piano pages */
+.two-column {
+  display: grid;
+  grid-template-columns: minmax(0, 1.1fr) minmax(0, 1fr);
+  gap: 22px;
+}
+@media (max-width: 720px) { .two-column { grid-template-columns: 1fr; } }
+
+/* hr */
+hr {
+  border: 0;
+  border-top: 1px solid var(--glass-border);
+  margin: 16px 0;
+}
+
+/* Hide xp.css decorations that bleed through */
+.window-body::before { display: none !important; }
+
+/* Progress bars */
+progress {
+  -webkit-appearance: none;
+  appearance: none;
+  width: 100%;
+  height: 8px;
+  border: 0;
+  border-radius: 999px;
+  background: rgba(255, 255, 255, 0.06);
+  overflow: hidden;
+}
+progress::-webkit-progress-bar { background: rgba(255, 255, 255, 0.06); border-radius: 999px; }
+progress::-webkit-progress-value {
+  background: linear-gradient(90deg, var(--accent-1), var(--accent-3));
+  border-radius: 999px;
+}
+progress::-moz-progress-bar {
+  background: linear-gradient(90deg, var(--accent-1), var(--accent-3));
+  border-radius: 999px;
+}
+
+/* MathJax font (preserve serif rendering for equations) */
+mjx-container, .mjx-container, mjx-math, .mjx-math {
+  color: var(--text-body) !important;
+  font-family: "Latin Modern Math", "STIX Two Math", "CMU Serif", serif !important;
+  -webkit-font-smoothing: antialiased !important;
+}
