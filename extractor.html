@@ -1,0 +1,258 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Extract</title>
+  <link rel="stylesheet" href="./modern.css?v=8" />
+  <style>
+    .ex-lede { color: var(--text-body); font-size: 12.5px; line-height: 1.7; margin: 2px 0 14px; max-width: 72ch; }
+    .ex-helper {
+      display: flex; align-items: center; gap: 10px; flex-wrap: wrap;
+      border: 1px solid var(--glass-border); border-radius: var(--radius-md);
+      background: rgba(255,255,255,0.04); padding: 10px 14px; margin-bottom: 6px;
+    }
+    .ex-dot { width: 8px; height: 8px; border-radius: 50%; background: var(--text-soft); box-shadow: 0 0 8px currentColor; flex: none; }
+    .ex-dot.ok { background: var(--signal-green); }
+    .ex-dot.bad { background: var(--accent-1); }
+    .ex-helper .status-text { font-size: 12px; color: var(--text-body); }
+    .ex-helper .spacer { flex: 1; }
+    .ex-helper button { padding: 6px 12px !important; font-size: 10px !important; }
+    .ex-config { display: flex; gap: 10px; flex-wrap: wrap; align-items: center; margin: 6px 0 14px; }
+    .ex-config input { font-size: 12px !important; }
+    .ex-config .url-field { flex: 1; min-width: 200px; }
+    .ex-config .token-field { width: 150px; }
+
+    .ex-setup {
+      border: 1px dashed rgba(255,59,48,0.4); border-radius: var(--radius-md);
+      background: rgba(255,59,48,0.06); padding: 14px 16px; margin: 6px 0 14px;
+      font-size: 12px; line-height: 1.7; color: var(--text-body);
+    }
+    .ex-setup code { display: block; margin: 6px 0; }
+    .ex-setup.hidden, .hidden { display: none !important; }
+
+    .ex-url-row { display: flex; gap: 10px; flex-wrap: wrap; align-items: center; margin-bottom: 10px; }
+    .ex-url-row input { flex: 1; min-width: 220px; font-size: 13px !important; }
+    .ex-modes { display: flex; gap: 10px; flex-wrap: wrap; margin-bottom: 6px; }
+
+    #status { font-size: 12px; color: var(--text-body); margin: 8px 0; min-height: 1.2em; }
+
+    .ex-result { border: 1px solid var(--glass-border); border-radius: var(--radius-md);
+      background: rgba(255,255,255,0.04); padding: 14px; margin-top: 10px; }
+    .ex-result .meta { font-size: 12px; color: var(--text-soft); margin-bottom: 8px; }
+    .ex-result .meta strong { color: var(--text-strong); }
+    .ex-actions { display: flex; gap: 10px; flex-wrap: wrap; margin-top: 10px; }
+    .ex-actions a.dl-btn {
+      display: inline-flex; align-items: center; border: 1px solid var(--glass-border);
+      background: var(--glass-bg); color: var(--text-strong); font-size: 11px; letter-spacing: 0.1em;
+      text-transform: uppercase; padding: 10px 17px; border-radius: 999px; text-decoration: none;
+    }
+    audio, video { width: 100%; margin-top: 6px; border-radius: 12px; background: #000; }
+    audio { filter: invert(0.92) hue-rotate(180deg); }
+    .thumb { max-width: 160px; border-radius: 8px; float: right; margin-left: 12px; }
+  </style>
+</head>
+<body>
+  <div class="app">
+    <div class="window">
+      <div class="title-bar">
+        <div class="title-bar-text">Extract // Media Fetch</div>
+      </div>
+
+      <div class="window-body">
+        <p class="ex-lede">
+          Pull publicly available audio or video via a small helper you run on
+          your own machine. Audio is fetched by default; the result can go
+          straight to Transform or Converter. Public, non-DRM media only.
+        </p>
+
+        <div class="ex-helper">
+          <span class="ex-dot" id="helperDot"></span>
+          <span class="status-text" id="helperStatus">Checking for local helper…</span>
+          <span class="spacer"></span>
+          <button id="retryBtn" type="button">Retry</button>
+        </div>
+
+        <div class="ex-config">
+          <input type="text" class="url-field" id="helperUrl" placeholder="Helper URL (http://127.0.0.1:8765)" />
+          <input type="text" class="token-field" id="helperToken" placeholder="token (optional)" />
+        </div>
+
+        <div class="ex-setup" id="setupBox">
+          Helper not detected. Run it on your machine, then click Retry:
+          <code>pip install -U yt-dlp&nbsp;&nbsp;# plus ffmpeg on your system</code>
+          <code>python3 media-helper/server.py</code>
+          It listens on <code style="display:inline">127.0.0.1:8765</code> and never uploads anything to a third party.
+          See <code style="display:inline">media-helper/README.md</code> for VPS / Docker options.
+        </div>
+
+        <div class="section-title">Source URL</div>
+        <div class="ex-url-row">
+          <input type="text" id="mediaUrl" placeholder="https://…  (page or direct media URL)" />
+          <button id="inspectBtn" type="button">Inspect</button>
+        </div>
+        <div class="ex-modes">
+          <button id="getAudioBtn" type="button" disabled>Get Audio</button>
+          <button id="getVideoBtn" type="button" disabled>Get Video</button>
+        </div>
+
+        <div id="status">Waiting for helper…</div>
+
+        <div class="ex-result hidden" id="resultBox"></div>
+
+        <pre id="log" aria-hidden="true"></pre>
+      </div>
+    </div>
+  </div>
+
+  <script src="./logger-bridge.js?v=8"></script>
+  <script src="./liquid.js?v=8"></script>
+  <script>
+  (function () {
+    "use strict";
+    const el = (id) => document.getElementById(id);
+    const logEl = el("log"), statusEl = el("status");
+    function log(m) { if (logEl) logEl.textContent += m + "\n"; }
+    function status(m) { if (statusEl) statusEl.textContent = m; log("· " + m); }
+
+    const DEFAULT_URL = "http://127.0.0.1:8765";
+    let helperOk = false;
+    let lastBlob = null, lastName = "media", lastMime = "";
+
+    const urlInput = el("helperUrl"), tokenInput = el("helperToken");
+    urlInput.value = localStorage.getItem("ex_helper_url") || DEFAULT_URL;
+    tokenInput.value = localStorage.getItem("ex_helper_token") || "";
+    urlInput.addEventListener("change", () => { localStorage.setItem("ex_helper_url", urlInput.value.trim()); checkHelper(); });
+    tokenInput.addEventListener("change", () => localStorage.setItem("ex_helper_token", tokenInput.value.trim()));
+
+    function base() { return (urlInput.value.trim() || DEFAULT_URL).replace(/\/+$/, ""); }
+    function token() { return tokenInput.value.trim(); }
+    function withToken(url) { const t = token(); return t ? url + (url.includes("?") ? "&" : "?") + "token=" + encodeURIComponent(t) : url; }
+
+    function setHelper(ok, text) {
+      helperOk = ok;
+      el("helperDot").className = "ex-dot " + (ok ? "ok" : "bad");
+      el("helperStatus").textContent = text;
+      el("setupBox").classList.toggle("hidden", ok);
+      el("getAudioBtn").disabled = !ok;
+      el("getVideoBtn").disabled = !ok;
+    }
+
+    async function checkHelper() {
+      setHelper(false, "Checking for local helper…");
+      status("Pinging helper at " + base() + " …");
+      try {
+        const r = await fetch(base() + "/health", { cache: "no-store" });
+        const j = await r.json();
+        if (j.ok) {
+          setHelper(true, "Helper online · yt-dlp " + (j.ytdlp || "?") + (j.auth ? " · auth" : ""));
+          status("Helper ready. Paste a URL and choose Audio or Video.");
+        } else {
+          setHelper(false, "Helper reachable but missing " + (j.ffmpeg ? "yt-dlp" : "ffmpeg") + ".");
+          status("Helper is running but a dependency is missing.");
+        }
+      } catch (e) {
+        setHelper(false, "No helper detected on " + base() + ".");
+        status("Helper offline. Start it, then click Retry.");
+      }
+    }
+    el("retryBtn").addEventListener("click", checkHelper);
+
+    el("inspectBtn").addEventListener("click", async () => {
+      const u = el("mediaUrl").value.trim();
+      if (!u) { status("Enter a URL first."); return; }
+      if (!helperOk) { status("Helper offline."); return; }
+      status("Inspecting…");
+      try {
+        const r = await fetch(withToken(base() + "/info?url=" + encodeURIComponent(u)), { cache: "no-store" });
+        const j = await r.json();
+        if (j.error) { status("Inspect failed: " + j.error); return; }
+        const dur = j.duration ? fmtDur(j.duration) : "?";
+        status("“" + (j.title || "untitled") + "” · " + dur + (j.extractor ? " · " + j.extractor : ""));
+        log("ℹ️ " + JSON.stringify(j));
+      } catch (e) { status("Inspect failed: " + e.message); }
+    });
+
+    function fmtDur(s) { const m = Math.floor(s / 60), sec = Math.floor(s % 60); return m + ":" + String(sec).padStart(2, "0"); }
+
+    async function extract(mode) {
+      const u = el("mediaUrl").value.trim();
+      if (!u) { status("Enter a URL first."); return; }
+      if (!helperOk) { status("Helper offline. Start it and Retry."); return; }
+      el("getAudioBtn").disabled = true; el("getVideoBtn").disabled = true;
+      status("Extracting " + mode + "… (first run on a site can take a while)");
+      try {
+        const url = withToken(base() + "/extract?url=" + encodeURIComponent(u) + "&mode=" + mode);
+        const r = await fetch(url, { cache: "no-store" });
+        if (!r.ok) {
+          let detail = "";
+          try { const j = await r.json(); detail = j.detail || j.error || ""; } catch (e) {}
+          throw new Error("HTTP " + r.status + (detail ? " — " + String(detail).slice(0, 200) : ""));
+        }
+        const name = r.headers.get("X-Media-Name") || nameFromDisposition(r.headers.get("Content-Disposition")) || (mode + "_media");
+        const blob = await r.blob();
+        lastBlob = blob; lastName = name; lastMime = blob.type || "";
+        showResult(blob, name, mode);
+        status("Got " + name + " (" + fmtBytes(blob.size) + ").");
+      } catch (e) {
+        status("Extract failed: " + e.message);
+      } finally {
+        el("getAudioBtn").disabled = false; el("getVideoBtn").disabled = false;
+      }
+    }
+    el("getAudioBtn").addEventListener("click", () => extract("audio"));
+    el("getVideoBtn").addEventListener("click", () => extract("video"));
+
+    function nameFromDisposition(cd) {
+      if (!cd) return null;
+      const m = /filename="?([^"]+)"?/.exec(cd);
+      return m ? m[1] : null;
+    }
+    function fmtBytes(b) {
+      if (b < 1024) return b + " B";
+      if (b < 1048576) return (b / 1024).toFixed(1) + " KB";
+      return (b / 1048576).toFixed(1) + " MB";
+    }
+
+    function showResult(blob, name, mode) {
+      const box = el("resultBox");
+      box.classList.remove("hidden");
+      box.innerHTML = "";
+      const meta = document.createElement("div");
+      meta.className = "meta";
+      meta.innerHTML = "<strong>" + escapeHtml(name) + "</strong> · " + fmtBytes(blob.size) + " · " + (blob.type || mode);
+      box.appendChild(meta);
+
+      const url = URL.createObjectURL(blob);
+      const isVideo = (blob.type || "").startsWith("video") || mode === "video";
+      const media = document.createElement(isVideo ? "video" : "audio");
+      media.controls = true; media.src = url;
+      box.appendChild(media);
+
+      const actions = document.createElement("div");
+      actions.className = "ex-actions";
+      const toTf = mkBtn("Send to Transform", () => handoff("transformer", blob, name, blob.type));
+      const toConv = mkBtn("Send to Converter", () => handoff("media", blob, name, blob.type));
+      const dl = document.createElement("a");
+      dl.className = "dl-btn"; dl.href = url; dl.download = name; dl.textContent = "Download";
+      actions.append(toTf, toConv, dl);
+      box.appendChild(actions);
+    }
+    function mkBtn(label, fn) { const b = document.createElement("button"); b.type = "button"; b.textContent = label; b.addEventListener("click", fn); return b; }
+    function escapeHtml(s) { return String(s).replace(/[&<>"]/g, (c) => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;" }[c])); }
+
+    function handoff(target, blob, name, mime) {
+      blob.arrayBuffer().then((buf) => {
+        try {
+          window.parent.postMessage({ type: "media-handoff", target, name, mime, buffer: buf }, "*", [buf]);
+          status("Sent “" + name + "” to " + (target === "media" ? "Converter" : "Transform") + ".");
+        } catch (e) { status("Handoff failed: " + e.message); }
+      });
+    }
+
+    checkHelper();
+    log("Extract ready.");
+  })();
+  </script>
+</body>
+</html>

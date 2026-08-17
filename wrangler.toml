@@ -1,0 +1,11 @@
+name = "la26v1-browser-kit"
+compatibility_date = "2025-08-01"
+pages_build_output_dir = "dist"
+
+# Pages CANNOT define a Durable Object; it binds to one defined in a
+# separate Worker. Deploy ./signaling-worker first, then deploy Pages.
+# (No `migrations` block here - that lives in the signaling Worker.)
+[[durable_objects.bindings]]
+name = "SIGNAL_ROOMS"
+class_name = "SignalRoom"
+script_name = "la26v1-signaling"

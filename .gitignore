@@ -1,0 +1,24 @@
+# OS
+.DS_Store
+
+# Cloudflare Wrangler (contains account credentials + local cache)
+.wrangler/
+**/.wrangler/
+*.dev.vars
+.dev.vars
+
+# Node
+node_modules/
+
+# Python / PyInstaller (one-click helper build artifacts)
+__pycache__/
+*.pyc
+media-helper/build/
+media-helper/dist/
+media-helper/bundled/
+media-helper/.tmp-cache/
+*.spec.bak
+
+# Local temp
+.tmp-*
+/tmp/

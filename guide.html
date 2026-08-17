@@ -1,0 +1,246 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Guide</title>
+  <link rel="stylesheet" href="./modern.css?v=7" />
+  <style>
+    /* Guide-specific readable typography (uses the unified mono font
+       inherited from modern.css). These classes are intentionally NOT
+       the ones modern.css hides (.subtitle/.hint/.desc/etc). */
+    .guide-lede {
+      color: var(--text-body);
+      font-size: 13px;
+      line-height: 1.7;
+      margin: 2px 0 18px;
+      max-width: 70ch;
+    }
+    .guide-tool { margin: 26px 0; }
+    .guide-tool:first-of-type { margin-top: 10px; }
+    .guide-tool h2 {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      font-size: 13px;
+      font-weight: 600;
+      letter-spacing: 0.16em;
+      text-transform: uppercase;
+      color: var(--text-strong);
+      margin: 0 0 12px;
+      padding-bottom: 10px;
+      border-bottom: 1px solid var(--hairline);
+    }
+    .guide-tool h2 .idx {
+      color: var(--accent-2);
+      font-size: 11px;
+    }
+    .guide-steps {
+      margin: 0 0 14px;
+      padding-left: 20px;
+      color: var(--text-body);
+      font-size: 13px;
+      line-height: 1.75;
+    }
+    .guide-steps li { margin-bottom: 6px; }
+    .guide-steps strong { color: var(--text-strong); font-weight: 600; }
+    .guide-notes {
+      list-style: none;
+      margin: 0;
+      padding: 0;
+      display: grid;
+      gap: 8px;
+    }
+    .guide-notes li {
+      display: grid;
+      grid-template-columns: 130px 1fr;
+      gap: 12px;
+      align-items: baseline;
+      font-size: 12.5px;
+      line-height: 1.6;
+      color: var(--text-body);
+      padding-bottom: 8px;
+      border-bottom: 1px solid rgba(255, 255, 255, 0.06);
+    }
+    .guide-notes li:last-child { border-bottom: 0; }
+    .guide-key {
+      color: var(--accent-2);
+      font-size: 10.5px;
+      letter-spacing: 0.1em;
+      text-transform: uppercase;
+    }
+    .guide-notes a { color: var(--accent-2); }
+    .guide-tool h3 {
+      font-size: 11px;
+      letter-spacing: 0.14em;
+      text-transform: uppercase;
+      color: var(--text-soft);
+      margin: 16px 0 8px;
+    }
+    @media (max-width: 620px) {
+      .guide-notes li { grid-template-columns: 1fr; gap: 2px; }
+    }
+  </style>
+</head>
+<body>
+  <div class="app">
+    <div class="window">
+      <div class="title-bar">
+        <div class="title-bar-text">Guide // Operating Manual</div>
+      </div>
+
+      <div class="window-body">
+        <p class="guide-lede">
+          Every tool runs entirely in your browser. Nothing is uploaded. Pick a
+          tab, follow the steps, and watch the shared Activity Log at the bottom
+          for live status from whichever tool is running.
+        </p>
+
+        <!-- ===================== Media Converter ===================== -->
+        <section class="guide-tool">
+          <h2><span class="idx">01</span> Media Converter</h2>
+          <ol class="guide-steps">
+            <li>Click <strong>Load Engine</strong> (the first load fetches FFmpeg.wasm and may take a moment).</li>
+            <li><strong>Drop a file</strong> (audio or video) onto the drop zone.</li>
+            <li>Choose an <strong>output format</strong> and quality preset.</li>
+            <li>Click <strong>Convert</strong>, then download the result.</li>
+          </ol>
+          <p class="guide-lede">
+            Runs FFmpeg.wasm inside a Web Worker. Some formats and codecs are
+            experimental in wasm builds; if one fails, try MP4 or WebM for video
+            and WAV, MP3, AAC or FLAC for audio (the log shows the exact error).
+          </p>
+
+          <h3>Advanced controls</h3>
+          <ul class="guide-notes">
+            <li><span class="guide-key">Bitrate</span> Compression quality for MP3/AAC/Opus/Vorbis. Higher = bigger file.</li>
+            <li><span class="guide-key">Sample rate</span> Resamples audio. Common: 44100 (music), 48000 (video).</li>
+            <li><span class="guide-key">Channels</span> Downmix or force stereo. Mono reduces size.</li>
+            <li><span class="guide-key">FPS</span> Video frame rate. Higher = smoother but heavier.</li>
+            <li><span class="guide-key">Scale</span> Resize video. Use <code>-1</code> to keep aspect ratio (e.g. <code>1280:-1</code>).</li>
+            <li><span class="guide-key">Codec</span> Video encoder. Availability depends on the wasm build.</li>
+            <li><span class="guide-key">CRF</span> Quality knob (H.264/VP9). Lower = better quality, bigger file. Typical 18&ndash;28.</li>
+            <li><span class="guide-key">GIF FPS / scale</span> Trade animation smoothness against file size.</li>
+          </ul>
+        </section>
+
+        <!-- ===================== Extract ===================== -->
+        <section class="guide-tool">
+          <h2><span class="idx">02</span> Extract</h2>
+          <ol class="guide-steps">
+            <li>Run the local helper on your own machine: <code>python3 media-helper/server.py</code> (needs <code>yt-dlp</code> and <code>ffmpeg</code> installed).</li>
+            <li>Wait for the status dot to turn <strong>green</strong>, or click <strong>Retry</strong>.</li>
+            <li>Paste a media URL. Optionally click <strong>Inspect</strong> to preview title and duration.</li>
+            <li>Click <strong>Get Audio</strong> (the default) or <strong>Get Video</strong>.</li>
+            <li>Send the result straight to <strong>Transform</strong> or <strong>Converter</strong>, or download it.</li>
+          </ol>
+          <p class="guide-lede">
+            The helper is a tiny wrapper around <code>yt-dlp</code> that runs on
+            your machine (or your own VPS), so the download never passes through
+            a third-party server. The web page just drives it &mdash; like the way
+            you supply your own model to the Transcribe tool.
+          </p>
+          <h3>Notes</h3>
+          <ul class="guide-notes">
+            <li><span class="guide-key">Local</span> Binds to <code>127.0.0.1:8765</code> by default. See <code>media-helper/README.md</code> for Docker / VPS setup.</li>
+            <li><span class="guide-key">Scope</span> Public, non-DRM media only. It cannot and does not decrypt paid or protected streams.</li>
+            <li><span class="guide-key">Audio-first</span> Grabs <code>bestaudio</code> by default (fast, small, no video pulled); switch to video when you need the picture.</li>
+            <li><span class="guide-key">Upkeep</span> Keep the helper current with <code>pip install -U yt-dlp</code> &mdash; sites change often.</li>
+          </ul>
+        </section>
+
+        <!-- ===================== Piano Transcription ===================== -->
+        <section class="guide-tool">
+          <h2><span class="idx">03</span> Piano Transcription</h2>
+          <ol class="guide-steps">
+            <li><strong>Download the pretrained ONNX model</strong> using the button in the tool.</li>
+            <li><strong>Load the model</strong> by dropping the <code>.onnx</code> file onto the model area (or click to choose).</li>
+            <li><strong>Load a piano audio file</strong> (mono or stereo, any sample rate).</li>
+            <li>Click <strong>Run Transcription</strong> and wait (audio is resampled to 16&nbsp;kHz and split into overlapping chunks).</li>
+            <li>When finished, click <strong>Download MIDI</strong> to save the transcription, including sustain pedal (CC64) events.</li>
+          </ol>
+          <h3>Model details</h3>
+          <ul class="guide-notes">
+            <li><span class="guide-key">Model</span> CRNN piano transcription with onset/offset regression and a separate pedal head. Uses 10&nbsp;s segments with 5&nbsp;s overlap and overlap-stitching.</li>
+            <li><span class="guide-key">Source</span> Kong, Li, Song, Wan, Wang (2020), &ldquo;High-resolution Piano Transcription with Pedals by Regressing Onsets and Offsets Times&rdquo; (<a href="https://arxiv.org/abs/2010.01815" target="_blank" rel="noopener">arXiv:2010.01815</a>).</li>
+            <li><span class="guide-key">Checkpoint</span> Zenodo <a href="https://doi.org/10.5281/zenodo.4034264" target="_blank" rel="noopener">10.5281/zenodo.4034264</a>, exported to ONNX.</li>
+            <li><span class="guide-key">License</span> Model weights CC-BY&nbsp;4.0 (attribution required); this wrapper is MIT.</li>
+          </ul>
+        </section>
+
+        <!-- ===================== Loudness Analyzer ===================== -->
+        <section class="guide-tool">
+          <h2><span class="idx">04</span> Loudness &amp; Masking Analyzer</h2>
+          <ol class="guide-steps">
+            <li><strong>Load an audio file</strong> (and optionally a reference track).</li>
+            <li>Click <strong>Analyze</strong> to compute loudness metrics and masking heatmaps.</li>
+          </ol>
+          <p class="guide-lede">
+            Computes BS.1770-5 loudness, Zwicker loudness, and MPEG-1
+            Psychoacoustic Model 1 masking with persistent-mask and margin
+            heatmaps.
+          </p>
+          <h3>Accuracy notes</h3>
+          <ul class="guide-notes">
+            <li><span class="guide-key">BS.1770-5</span> Tested, accurate to the 2nd decimal.</li>
+            <li><span class="guide-key">Zwicker / MPEG</span> Adaptations for reference only; not a guaranteed faithful replication of the original experiments, standards or publications.</li>
+            <li><span class="guide-key">Platform penalties</span> References only; we do not have direct access to each platform's algorithm.</li>
+          </ul>
+        </section>
+
+        <!-- ===================== Transform ===================== -->
+        <section class="guide-tool">
+          <h2><span class="idx">05</span> Transform</h2>
+          <ol class="guide-steps">
+            <li>Load audio &mdash; drop a file, or send one over from the <strong>Extract</strong> tab.</li>
+            <li>Build a chain (up to 6 stages): <strong>Pitch</strong>, <strong>Stretch</strong>, <strong>Reverse</strong>, <strong>Vocode</strong>. Reorder with the <strong>&uarr;/&darr;</strong> buttons.</li>
+            <li>Tune each stage, then click <strong>Render</strong> (runs offline in a worker).</li>
+            <li>Compare the <strong>before / after spectrograms</strong>, play the result, then download the WAV or send it to <strong>Converter</strong>.</li>
+          </ol>
+          <p class="guide-lede">
+            The goal is to reshape a sound while keeping it recognizable: the
+            phase and spectrum can change completely, but the pitch contour,
+            rhythm and intelligibility survive. Runs entirely on Web Audio.
+          </p>
+          <h3>Transforms</h3>
+          <ul class="guide-notes">
+            <li><span class="guide-key">Pitch</span> Shifts pitch without changing duration (phase vocoder + resample). <strong>Preserve formants</strong> keeps voices natural instead of chipmunked.</li>
+            <li><span class="guide-key">Stretch</span> Changes duration without changing pitch. <strong>Preserve transients</strong> keeps drums and consonants sharp.</li>
+            <li><span class="guide-key">Reverse</span> Plays the audio backwards. No parameters.</li>
+            <li><span class="guide-key">Vocode</span> Imposes the content's band envelopes on an internal synth carrier (saw / pulse / noise). Words and melody stay intelligible while the timbre is replaced.</li>
+          </ul>
+        </section>
+
+        <!-- ===================== File Transfer ===================== -->
+        <section class="guide-tool">
+          <h2><span class="idx">06</span> Transfer</h2>
+          <ol class="guide-steps">
+            <li>On the <strong>sending</strong> device, open <strong>Send</strong> and click <strong>Create transfer code</strong>. A 6-digit code and a QR appear.</li>
+            <li>On the <strong>receiving</strong> device, open <strong>Receive</strong> and type the code &mdash; or just <strong>scan the QR</strong> with its camera, which opens this page straight to the transfer.</li>
+            <li>Both devices show a <strong>security-check</strong> row of 5 symbols. Confirm they <strong>match</strong>, then the sender clicks <strong>Symbols match &mdash; continue</strong>.</li>
+            <li>(Optional, recommended) On the receiver, click <strong>Choose destination folder</strong> to stream straight to disk.</li>
+            <li>On the sender, <strong>choose files</strong>, <strong>choose a folder</strong>, or drag items onto the drop zone. Progress shows on both ends and in the Activity Log.</li>
+          </ol>
+          <p class="guide-lede">
+            Files travel directly device-to-device over an encrypted WebRTC
+            channel &mdash; they are never uploaded or stored. Only the 6-digit
+            handshake passes through a tiny signaling broker, which never sees
+            file names or contents. Keep the tab open on both devices.
+          </p>
+          <h3>Notes</h3>
+          <ul class="guide-notes">
+            <li><span class="guide-key">Security check</span> The 5 symbols are derived from the connection itself; if they differ on the two devices, someone may be intercepting &mdash; stop and retry.</li>
+            <li><span class="guide-key">Folders</span> Folder sending and streaming-to-disk need desktop Chrome or Edge. Other browsers download each file individually to the Downloads folder.</li>
+            <li><span class="guide-key">Resume</span> If a transfer is interrupted, reconnect with a new code and resend the same folder: files already fully written to the chosen destination are detected and skipped.</li>
+            <li><span class="guide-key">Networks</span> A direct connection can fail on strict corporate/carrier networks (no relay fallback is used). Try a different network if it can't connect.</li>
+            <li><span class="guide-key">Codes</span> Each code is single-use and expires after about 10 minutes.</li>
+          </ul>
+        </section>
+      </div>
+    </div>
+  </div>
+
+  <script src="./logger-bridge.js?v=7"></script>
+  <script src="./liquid.js?v=7"></script>
+</body>
+</html>

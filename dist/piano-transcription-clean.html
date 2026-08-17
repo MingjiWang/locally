@@ -1,0 +1,874 @@
+<!doctype html>
+<!--
+MIT License
+
+Copyright (c) 2025 Mingji Wang
+
+Permission is hereby granted, free of charge, to any person obtaining a copy
+of this software and associated documentation files (the "Software"), to deal
+in the Software without restriction, including without limitation the rights
+to use, copy, modify, merge, publish, distribute, sublicense, and/or sell
+copies of the Software, and to permit persons to whom the Software is
+furnished to do so, subject to the following conditions:
+
+The above copyright notice and this permission notice shall be included in all
+copies or substantial portions of the Software.
+
+THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
+IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
+FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE
+AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
+LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
+OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
+SOFTWARE.
+-->
+<html lang="en">
+ <head>
+  <link rel="stylesheet" href="./modern.css?v=7" />
+ <meta charset="utf-8" />
+ <title>Piano Transcription (Kong et al. 2020, Browser Demo)</title>
+ <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+
+ <!-- Windows XP UI style -->
+ <style>
+ /* Unified font (matches the shared activity log) */
+ body,
+ .app,
+ .app * {
+ font-family: "JetBrains Mono", "SF Mono", ui-monospace, "Menlo", monospace !important;
+ -webkit-font-smoothing: antialiased;
+ font-size: 14px;
+ }
+
+ body {
+ margin: 16px;
+ }
+
+ .app {
+ max-width: 880px;
+ margin: 0 auto;
+ }
+
+ .window-body {
+ font-size: 13px;
+ }
+
+ .section-title {
+ font-size: 0.9rem;
+ font-weight: 700;
+ margin: 12px 0 4px;
+ text-transform: uppercase;
+ letter-spacing: 0.06em;
+ }
+
+ .subtitle {
+ margin: 6px 0 10px;
+ font-size: 0.9rem;
+ }
+
+ .hint {
+ font-size: 0.8rem;
+ margin: 4px 0;
+ }
+
+ .field-row {
+ margin-bottom: 6px;
+ }
+
+ .drop-zone {
+ border: 2px dashed #808080;
+ background: #ffffff;
+ padding: 10px;
+ text-align: center;
+ cursor: pointer;
+ font-size: 0.85rem;
+ margin-bottom: 6px;
+ }
+
+ .drop-zone--hover {
+ background: #cce4ff;
+ }
+
+ #log {
+ background: #000000;
+ color: #e2e8f0;
+ padding: 6px 8px;
+ border-radius: 0;
+ border: 1px solid #808080;
+ height: 200px;
+ overflow-y: auto;
+ font-family: "JetBrains Mono", "SF Mono", ui-monospace, "Menlo", monospace;
+ font-size: 0.8rem;
+ white-space: pre-wrap;
+ margin-top: 8px;
+ }
+
+ #progress {
+ width: 100%;
+ margin-top: 6px;
+ display: none;
+ }
+
+ .two-column {
+ display: grid;
+ grid-template-columns: minmax(0, 1.1fr) minmax(0, 1fr);
+ gap: 16px;
+ }
+
+ @media (max-width: 720px) {
+ .two-column {
+ grid-template-columns: 1fr;
+ }
+ }
+
+ .small {
+ font-size: 0.8rem;
+ }
+
+ .badge {
+ display: inline-block;
+ padding: 2px 6px;
+ border: 1px solid #808080;
+ background: #d4d0c8;
+ font-size: 0.7rem;
+ text-transform: uppercase;
+ letter-spacing: 0.08em;
+ margin-right: 4px;
+ }
+
+ .status-bar {
+ font-size: 0.8rem;
+ }
+ /* Background image for log window */
+#log {
+ position: relative;
+ background: transparent;  /* turn off solid bg */
+ color: #ff2a2a; /* white text on dark image */
+ z-index: 1;
+ font-size: 18px;
+}
+
+/* Add image with opacity via pseudo-element */
+#log::before {
+ content: "";
+ position: absolute;
+ inset: 0;
+ background: url("https://raw.githubusercontent.com/MingjiWang/chilling_lopo_pics/main/79cbc0bca1453cd3c4aab2ac1d220eb7.jpg") center/cover no-repeat;
+ opacity: 0.9;  /* adjust visibility */
+ z-index: -1;
+ pointer-events: none;
+ background-position: center top;
+ background-size: 100% auto;
+}
+
+
+/* Background image for drop-zone */
+#modelDropZone {
+ position: relative;
+ z-index: 0;
+ background: transparent;
+ overflow: hidden;
+}
+
+#modelDropZone::before {
+ content: "";
+ position: absolute;
+ inset: 0;
+ background: url("https://raw.githubusercontent.com/MingjiWang/chilling_lopo_pics/main/2914a6cd47efa1cf1645a491029ba18a.gif") center/cover no-repeat;
+ opacity: 0.9;
+ z-index: -1;
+ pointer-events: none;
+}
+
+ 
+
+/* Liquid glass overrides removed - see modern.css */
+</style>
+ </head>
+ <body>
+ <div class="app">
+ <div class="window">
+ <div class="title-bar">
+ <div class="title-bar-text">
+ Browser Piano Transcription (Kong et al. 2020)
+ </div>
+ <div class="title-bar-controls">
+ <button aria-label="Minimize"></button>
+ <button aria-label="Maximize"></button>
+ <button aria-label="Close"></button>
+ </div>
+ </div>
+
+ <div class="window-body">
+ <div class="field-row">
+ <button id="downloadOnnxBtn">Download official ONNX model</button>
+ </div>
+
+ <hr>
+
+ <!-- Controls -->
+ <div class="section-title">1. Load Model (.onnx)</div>
+ <div class="drop-zone" id="modelDropZone">
+ <strong>Drop ONNX file here</strong><br>
+ or click to choose a file.
+ <br>
+ <span class="small">(e.g. <code>kong_CRNN_note_F1.0.9677_pedal_F1.0.9186.onnx</code>)</span>
+ <input type="file" id="modelFile" accept=".onnx" style="display:none;">
+ </div>
+
+ <div class="section-title">2. Load Audio</div>
+ <div class="field-row">
+ <label for="audioFile">Audio file:</label>
+ <input type="file" id="audioFile" accept="audio/*">
+ </div>
+
+ <div class="section-title">3. Run</div>
+ <div class="field-row">
+ <button id="runBtn">Run Transcription</button>
+ <button id="downloadMidiBtn" disabled>Download MIDI</button>
+ </div>
+
+ <progress id="progress" max="100" value="0"></progress>
+
+ <div class="section-title">Log</div>
+ <pre id="log"></pre>
+ </div>
+
+ <div class="status-bar">
+ <p class="status-bar-field" id="status">Ready. No model loaded.</p>
+ <p class="status-bar-field">Backend: ONNX Runtime Web (WebGPU/WASM)</p>
+ <p class="status-bar-field">Frames: 100 fps (16 kHz / 160-sample hop)</p>
+ </div>
+ </div>
+ </div>
+
+ <script src="https://cdn.jsdelivr.net/npm/onnxruntime-web/dist/ort.min.js"></script>
+ <script src="https://cdn.jsdelivr.net/npm/@tonejs/midi@2.0.28/build/Midi.js"></script>
+
+ <script>
+ // --- Constants ---
+ const SAMPLE_RATE = 16000;
+ const HOP_SIZE = 160;
+ const FRAMES_PER_SEC = SAMPLE_RATE / HOP_SIZE; // 100 fps
+ const PITCHES = 88;
+
+ // Segmentation: 10s segments, 5s hop (50% overlap)
+ const SEGMENT_SECONDS = 10;
+ const HOP_SECONDS = 5;
+
+ // Note detection thresholds (from original repo)
+ const ONSET_REG_THRESHOLD = 0.3;
+ const OFFSET_REG_THRESHOLD = 0.3;
+ const FRAME_THRESHOLD = 0.1;
+ const MIN_DUR = 0.03; // seconds
+
+ // Pedal detection thresholds (from inference.py / utilities.py)
+ const PEDAL_OFFSET_REG_THRESHOLD = 0.2;
+ const PEDAL_FRAME_THRESHOLD = 0.5;
+
+ // Regression neighbourhoods
+ const NEIGHBOUR_ONSET = 2;
+ const NEIGHBOUR_OFFSET = 4;
+
+ const OFFICIAL_MODEL_URL =
+ "https://github.com/MingjiWang/kong-piano-transcription-onnx/releases/download/v1.0.0/kong_CRNN_note_F1.0.9677_pedal_F1.0.9186.onnx";
+
+ let onnxSession = null;
+ let audioBuffer = null;
+ let detectedNotes = [];
+ let detectedPedals = [];
+
+ const logElem = document.getElementById("log");
+ const progressElem = document.getElementById("progress");
+ const statusElem = document.getElementById("status");
+ const modelDropZone = document.getElementById("modelDropZone");
+ const modelFileInput = document.getElementById("modelFile");
+
+ function log(msg) {
+ logElem.textContent += `[${new Date().toLocaleTimeString()}] ${msg}\n`;
+ logElem.scrollTop = logElem.scrollHeight;
+ }
+
+ function setProgress(percent) {
+ if (percent <= 0) {
+ progressElem.style.display = "none";
+ progressElem.value = 0;
+ return;
+ }
+ progressElem.style.display = "block";
+ progressElem.value = percent;
+ }
+
+ function setStatus(text) {
+ statusElem.textContent = text;
+ }
+
+ // --- Download ONNX button (opens GitHub Release asset) ---
+ document.getElementById("downloadOnnxBtn").addEventListener("click", () => {
+ window.open(OFFICIAL_MODEL_URL, "_blank");
+ });
+
+ // --- Model loading (shared between file input and drag-drop) ---
+ async function loadModelFile(file) {
+ try {
+ setStatus(`Loading model: ${file.name} ...`);
+ const buffer = await file.arrayBuffer();
+ onnxSession = await ort.InferenceSession.create(buffer, {
+ executionProviders: ["webgpu", "wasm"],
+ });
+ log(`Model loaded: ${file.name}`);
+ setStatus(`Model loaded: ${file.name}`);
+ } catch (err) {
+ console.error(err);
+ log(`Error loading model: ${err}`);
+ setStatus("Error loading model (see log).");
+ }
+ }
+
+ // File input for model
+ modelFileInput.addEventListener("change", async (e) => {
+ const file = e.target.files[0];
+ if (!file) return;
+ await loadModelFile(file);
+ });
+
+ // Click on drop zone → open file picker
+ modelDropZone.addEventListener("click", () => {
+ modelFileInput.click();
+ });
+
+ // Drag & drop for ONNX model
+ modelDropZone.addEventListener("dragover", (e) => {
+ e.preventDefault();
+ modelDropZone.classList.add("drop-zone--hover");
+ });
+
+ modelDropZone.addEventListener("dragleave", (e) => {
+ e.preventDefault();
+ modelDropZone.classList.remove("drop-zone--hover");
+ });
+
+ modelDropZone.addEventListener("drop", async (e) => {
+ e.preventDefault();
+ modelDropZone.classList.remove("drop-zone--hover");
+ const file = e.dataTransfer.files[0];
+ if (!file) return;
+ if (!file.name.toLowerCase().endsWith(".onnx")) {
+ log("Dropped file is not an .onnx model.");
+ return;
+ }
+ await loadModelFile(file);
+ });
+
+ // --- Audio loading ---
+ document.getElementById("audioFile").addEventListener("change", async (e) => {
+ const file = e.target.files[0];
+ if (!file) return;
+ try {
+ const arrayBuf = await file.arrayBuffer();
+ const audioCtx = new (window.AudioContext || window.webkitAudioContext)();
+ audioBuffer = await audioCtx.decodeAudioData(arrayBuf);
+ log(`Audio loaded: ${file.name} (${audioBuffer.duration.toFixed(2)}s)`);
+ setStatus(`Audio loaded: ${file.name}`);
+ } catch (err) {
+ console.error(err);
+ log(`Error decoding audio: ${err}`);
+ setStatus("Error decoding audio (see log).");
+ }
+ });
+
+ // --- Main transcription button ---
+ document.getElementById("runBtn").addEventListener("click", async () => {
+ if (!onnxSession || !audioBuffer) {
+ alert("Load model and audio first.");
+ return;
+ }
+
+ const btn = document.getElementById("runBtn");
+ btn.disabled = true;
+ btn.textContent = "Processing...";
+ document.getElementById("downloadMidiBtn").disabled = true;
+ detectedNotes = [];
+ detectedPedals = [];
+ setStatus("Running transcription...");
+
+ try {
+ // 1. Resample & Normalize
+ log("Preprocessing audio (resample to 16kHz, mono, normalize)...");
+ const offlineCtx = new OfflineAudioContext(
+ 1,
+ Math.ceil(audioBuffer.duration * SAMPLE_RATE),
+ SAMPLE_RATE
+ );
+ const source = offlineCtx.createBufferSource();
+ source.buffer = audioBuffer;
+ source.connect(offlineCtx.destination);
+ source.start();
+ const resampled = await offlineCtx.startRendering();
+ let fullData = resampled.getChannelData(0);
+
+ // Normalize fullData to [-1,1]
+ let maxAmp = 0.0;
+ for (let i = 0; i < fullData.length; i++) {
+ const v = Math.abs(fullData[i]);
+ if (v > maxAmp) maxAmp = v;
+ }
+ if (maxAmp > 0) {
+ const inv = 1 / maxAmp;
+ for (let i = 0; i < fullData.length; i++) {
+ fullData[i] *= inv;
+ }
+ }
+
+ const totalSamples = fullData.length;
+ const segmentSamples = SEGMENT_SECONDS * SAMPLE_RATE;
+ const hopSamples = HOP_SECONDS * SAMPLE_RATE;
+
+ log("Starting overlapped chunked inference (10s segments, 5s hop)...");
+ const frameChunks = [];
+ const velChunks = [];
+ const onsetRegChunks = [];
+ const offsetRegChunks = [];
+ const pedalFrameChunks = [];
+ const pedalOffsetRegChunks = [];
+
+ for (let start = 0; start < totalSamples; start += hopSamples) {
+ const end = Math.min(start + segmentSamples, totalSamples);
+ const chunkLength = end - start;
+ if (chunkLength < HOP_SIZE) break; // too short to process
+
+ const chunkData = fullData.slice(start, end);
+ const inputTensor = new ort.Tensor("float32", chunkData, [1, chunkLength]);
+
+ const results = await onnxSession.run({ waveform: inputTensor });
+
+ const frameOut = results["frame_output"];  // [1, T, 88]
+ const velOut = results["velocity_output"]; // [1, T, 88] (optional)
+ const regOnset = results["reg_onset_output"];  // [1, T, 88]
+ const regOffset  = results["reg_offset_output"]; // [1, T, 88]
+ const regPedalOffset = results["reg_pedal_offset_output"]; // [1, T, 1] (optional)
+ const pedalFrame = results["pedal_frame_output"];  // [1, T, 1] (optional)
+
+ if (!frameOut || !regOnset || !regOffset) {
+ throw new Error("Missing expected note outputs: need frame_output, reg_onset_output, reg_offset_output");
+ }
+
+ const T = frameOut.dims[1]; // dims: [1, T, P]
+ const P = frameOut.dims[2];
+ if (P !== PITCHES) {
+ log(`Warning: expected ${PITCHES} pitches but got ${P}. Using ${P} as P.`);
+ }
+
+ frameChunks.push({ data: new Float32Array(frameOut.data), frames: T });
+ onsetRegChunks.push({ data: new Float32Array(regOnset.data), frames: T });
+ offsetRegChunks.push({ data: new Float32Array(regOffset.data), frames: T });
+
+ if (velOut) {
+ velChunks.push({ data: new Float32Array(velOut.data), frames: T });
+ }
+
+ if (regPedalOffset && pedalFrame) {
+ const Tped = regPedalOffset.dims[1];
+ pedalOffsetRegChunks.push({
+ data: new Float32Array(regPedalOffset.data),
+ frames: Tped
+ });
+ pedalFrameChunks.push({
+ data: new Float32Array(pedalFrame.data),
+ frames: Tped
+ });
+ }
+
+ setProgress((end / totalSamples) * 100);
+ await new Promise((r) => setTimeout(r, 5));
+ }
+
+ log("Stitching (deframe) all note chunks...");
+ const stitchedFrame  = deframeChunks(frameChunks, PITCHES);
+ const stitchedOnsetReg = deframeChunks(onsetRegChunks, PITCHES);
+ const stitchedOffsetReg  = deframeChunks(offsetRegChunks, PITCHES);
+ const stitchedVel  = velChunks.length
+ ? deframeChunks(velChunks, PITCHES)
+ : { data: null, frames: stitchedFrame.frames };
+
+ const Ttotal = stitchedFrame.frames;
+ log(`Total frames after stitching: ${Ttotal} (${(Ttotal / FRAMES_PER_SEC).toFixed(2)}s at 100 fps)`);
+
+ // 2. Regression-based note decoding
+ log("Binarizing onset/offset regression and decoding notes...");
+ const onsetRegData = stitchedOnsetReg.data;
+ const offsetRegData = stitchedOffsetReg.data;
+ const frameData  = stitchedFrame.data;
+ const velData  = stitchedVel.data;
+
+ const onsetBinShift = binarizeRegression(
+ onsetRegData,
+ Ttotal,
+ PITCHES,
+ ONSET_REG_THRESHOLD,
+ NEIGHBOUR_ONSET
+ );
+ const offsetBinShift = binarizeRegression(
+ offsetRegData,
+ Ttotal,
+ PITCHES,
+ OFFSET_REG_THRESHOLD,
+ NEIGHBOUR_OFFSET
+ );
+
+ detectedNotes = detectNotesFromRegression({
+ frameData,
+ onsetBin: onsetBinShift.binary,
+ onsetShift: onsetBinShift.shift,
+ offsetBin: offsetBinShift.binary,
+ offsetShift: offsetBinShift.shift,
+ velData,
+ T: Ttotal,
+ P: PITCHES,
+ frameThreshold: FRAME_THRESHOLD
+ });
+
+ // 3. Pedal decoding (if model provides pedal outputs)
+ if (pedalFrameChunks.length > 0 && pedalOffsetRegChunks.length > 0) {
+ log("Stitching (deframe) pedal chunks and decoding pedals...");
+ const stitchedPedalFrame = deframeChunks(pedalFrameChunks, 1);  // (Tped, 1)
+ const stitchedPedalOffsetReg = deframeChunks(pedalOffsetRegChunks, 1);  // (Tped, 1)
+
+ const Tped = stitchedPedalFrame.frames;
+ const pedalFrameData = stitchedPedalFrame.data;  // length Tped * 1
+ const pedalOffsetRegData = stitchedPedalOffsetReg.data;
+
+ const pedalBinShift = binarizeRegression(
+ pedalOffsetRegData,
+ Tped,
+ 1, // one pedal class
+ PEDAL_OFFSET_REG_THRESHOLD,
+ NEIGHBOUR_OFFSET
+ );
+
+ detectedPedals = detectPedalsFromRegression({
+ frameData: pedalFrameData,
+ offsetBin: pedalBinShift.binary,
+ offsetShift: pedalBinShift.shift,
+ T: Tped,
+ frameThreshold: PEDAL_FRAME_THRESHOLD
+ });
+
+ log(`Found ${detectedPedals.length} pedal segments.`);
+ } else {
+ log("Pedal outputs not found in model; skipping pedal decoding.");
+ detectedPedals = [];
+ }
+
+ log(`Success! Found ${detectedNotes.length} notes.`);
+ setStatus(`Done. Notes: ${detectedNotes.length}, Pedal segments: ${detectedPedals.length}`);
+ document.getElementById("downloadMidiBtn").disabled = detectedNotes.length === 0;
+ } catch (err) {
+ console.error(err);
+ log(`Error: ${err.message}`);
+ setStatus("Error during transcription (see log).");
+ }
+
+ btn.disabled = false;
+ btn.textContent = "Run Transcription";
+ setProgress(0);
+ });
+
+ // --- MIDI download ---
+ document.getElementById("downloadMidiBtn").addEventListener("click", () => {
+ const midi = new Midi();
+ const track = midi.addTrack();
+
+ // Notes
+ detectedNotes.forEach((n) => {
+ track.addNote({
+ midi: n.midi,
+ time: n.start,
+ duration: n.duration,
+ velocity: n.velocity
+ });
+ });
+
+ // Sustain pedal as CC64
+ // Tonejs/Midi stores CC values normalized 0–1, so 1.0 = full (127), 0 = off.
+ detectedPedals.forEach((p) => {
+ track.addCC({
+ number: 64,
+ value: 1.0,
+ time: p.onset
+ });
+ track.addCC({
+ number: 64,
+ value: 0.0,
+ time: p.offset
+ });
+ });
+
+ const a = document.createElement("a");
+ a.href = URL.createObjectURL(new Blob([midi.toArray()], { type: "audio/midi" }));
+ a.download = "transcription.mid";
+ a.click();
+ });
+
+ // --- Stitching / Deframe ---
+ function deframeChunks(chunks, classes) {
+ if (!chunks.length) return { data: new Float32Array(0), frames: 0 };
+
+ const N = chunks.length;
+ const ranges = [];
+ let totalFrames = 0;
+
+ for (let i = 0; i < N; i++) {
+ const T = chunks[i].frames;
+ let startF, endF;
+ if (N === 1) {
+ startF = 0;
+ endF = T;
+ } else if (i === 0) {
+ startF = 0;
+ endF = Math.floor(T * 0.75);
+ } else if (i === N - 1) {
+ startF = Math.floor(T * 0.25);
+ endF = T;
+ } else {
+ startF = Math.floor(T * 0.25);
+ endF = Math.floor(T * 0.75);
+ }
+ ranges.push({ startF, endF });
+ totalFrames += endF - startF;
+ }
+
+ const out = new Float32Array(totalFrames * classes);
+ let offset = 0;
+ for (let i = 0; i < N; i++) {
+ const chunk = chunks[i];
+ const { startF, endF } = ranges[i];
+ const lenFrames = endF - startF;
+ if (lenFrames <= 0) continue;
+ const srcStart = startF * classes;
+ const srcEnd = endF * classes;
+ const len = lenFrames * classes;
+ out.set(chunk.data.subarray(srcStart, srcEnd), offset);
+ offset += len;
+ }
+
+ return { data: out, frames: totalFrames };
+ }
+
+ // --- Regression binarization (port of get_binarized_output_from_regression) ---
+ function isMonotonicNeighbour(regData, T, P, k, n, neighbour) {
+ // regData layout: [T * P]
+ for (let i = 0; i < neighbour; i++) {
+ const left = regData[(n - i) * P + k];
+ const leftPrev = regData[(n - i - 1) * P + k];
+ if (left < leftPrev) return false;
+
+ const right = regData[(n + i) * P + k];
+ const rightNext = regData[(n + i + 1) * P + k];
+ if (right < rightNext) return false;
+ }
+ return true;
+ }
+
+ function binarizeRegression(regData, T, P, threshold, neighbour) {
+ const binary = new Uint8Array(T * P);
+ const shift = new Float32Array(T * P);
+
+ for (let k = 0; k < P; k++) {
+ for (let n = neighbour; n < T - neighbour; n++) {
+ const idx = n * P + k;
+ const xn = regData[idx];
+ if (xn <= threshold) continue;
+ if (!isMonotonicNeighbour(regData, T, P, k, n, neighbour)) continue;
+
+ binary[idx] = 1;
+
+ const xnm1 = regData[(n - 1) * P + k];
+ const xnp1 = regData[(n + 1) * P + k];
+ let s;
+ if (xnm1 > xnp1) {
+ s = (xnp1 - xnm1) / (xn - xnp1) / 2;
+ } else {
+ s = (xnp1 - xnm1) / (xn - xnm1) / 2;
+ }
+ shift[idx] = s;
+ }
+ }
+
+ return { binary, shift };
+ }
+
+ // --- Note detection from regression (port of note_detection_with_onset_offset_regress) ---
+ function detectNotesFromRegression({
+ frameData,
+ onsetBin,
+ onsetShift,
+ offsetBin,
+ offsetShift,
+ velData,
+ T,
+ P,
+ frameThreshold
+ }) {
+ const tuples = []; // {bgn, fin, onsetShift, offsetShift, vel, pitchIndex}
+
+ for (let p = 0; p < P; p++) {
+ let bgn = null;
+ let frameDisappear = null;
+ let offsetOccur = null;
+
+ for (let t = 0; t < T; t++) {
+ const idx = t * P + p;
+
+ if (onsetBin[idx] === 1) {
+ if (bgn != null) {
+ const fin = Math.max(t - 1, 0);
+ const bIdx = bgn * P + p;
+ tuples.push({
+ bgn,
+ fin,
+ onsetShift: onsetShift[bIdx],
+ offsetShift: 0,
+ vel: velData ? velData[bIdx] : 0.5,
+ pitchIndex: p
+ });
+ frameDisappear = null;
+ offsetOccur = null;
+ }
+ bgn = t;
+ }
+
+ if (bgn != null && t > bgn) {
+ const fVal = frameData[idx];
+
+ if (fVal <= frameThreshold && frameDisappear == null) {
+ frameDisappear = t;
+ }
+ if (offsetBin[idx] === 1 && offsetOccur == null) {
+ offsetOccur = t;
+ }
+
+ if (frameDisappear != null) {
+ let fin;
+ if (offsetOccur != null && offsetOccur - bgn > frameDisappear - offsetOccur) {
+ fin = offsetOccur;
+ } else {
+ fin = frameDisappear;
+ }
+ const bIdx = bgn * P + p;
+ const fIdx = fin * P + p;
+ tuples.push({
+ bgn,
+ fin,
+ onsetShift: onsetShift[bIdx],
+ offsetShift: offsetShift[fIdx],
+ vel: velData ? velData[bIdx] : 0.5,
+ pitchIndex: p
+ });
+ bgn = null;
+ frameDisappear = null;
+ offsetOccur = null;
+ }
+
+ // Safety: if still on for too long or at last frame
+ if (bgn != null && (t - bgn >= 600 || t === T - 1)) {
+ const fin = t;
+ const bIdx = bgn * P + p;
+ const fIdx = fin * P + p;
+ tuples.push({
+ bgn,
+ fin,
+ onsetShift: onsetShift[bIdx],
+ offsetShift: offsetShift[fIdx],
+ vel: velData ? velData[bIdx] : 0.5,
+ pitchIndex: p
+ });
+ bgn = null;
+ frameDisappear = null;
+ offsetOccur = null;
+ }
+ }
+ }
+ }
+
+ const notes = [];
+ for (const t of tuples) {
+ const onsetTime = (t.bgn + t.onsetShift) / FRAMES_PER_SEC;
+ const offsetTime = (t.fin + t.offsetShift) / FRAMES_PER_SEC;
+ const dur = Math.max(offsetTime - onsetTime, MIN_DUR);
+ notes.push({
+ midi: 21 + t.pitchIndex,
+ start: onsetTime,
+ duration: dur,
+ velocity: Math.min(1, Math.max(0, t.vel))
+ });
+ }
+
+ notes.sort((a, b) => a.start - b.start);
+ return notes;
+ }
+
+ // --- Pedal detection (port of pedal_detection_with_onset_offset_regress) ---
+ function detectPedalsFromRegression({ frameData, offsetBin, offsetShift, T, frameThreshold }) {
+ const tuples = []; // [bgn, fin, onset_shift(=0), offset_shift]
+ let bgn = null;
+ let frameDisappear = null;
+ let offsetOccur = null;
+
+ for (let i = 1; i < T; i++) {
+ const fNow = frameData[i];
+ const fPrev = frameData[i - 1];
+
+ // Pedal onset: frame rises above threshold and is increasing
+ if (fNow >= frameThreshold && fNow > fPrev) {
+ if (bgn == null) {
+ bgn = i;
+ }
+ }
+
+ if (bgn != null && i > bgn) {
+ if (fNow <= frameThreshold && frameDisappear == null) {
+ frameDisappear = i;
+ }
+
+ if (offsetBin[i] === 1 && offsetOccur == null) {
+ offsetOccur = i;
+ }
+
+ if (offsetOccur != null) {
+ const fin = offsetOccur;
+ const offShift = offsetShift[fin]; // single-class array
+ tuples.push([bgn, fin, 0.0, offShift]);
+ bgn = null;
+ frameDisappear = null;
+ offsetOccur = null;
+ }
+
+ if (frameDisappear != null && i - frameDisappear >= 10) {
+ const fin = frameDisappear;
+ const offShift = offsetShift[fin];
+ tuples.push([bgn, fin, 0.0, offShift]);
+ bgn = null;
+ frameDisappear = null;
+ offsetOccur = null;
+ }
+ }
+ }
+
+ // Sort by onset
+ tuples.sort((a, b) => a[0] - b[0]);
+
+ // Convert to time-based events
+ const pedals = tuples.map(([bgnIdx, finIdx, onsetShift, offsetShiftVal]) => {
+ const onsetTime = (bgnIdx + onsetShift) / FRAMES_PER_SEC;
+ const offsetTime = (finIdx + offsetShiftVal) / FRAMES_PER_SEC;
+ return { onset: onsetTime, offset: offsetTime };
+ });
+
+ return pedals;
+ }
+ </script>
+   <script src="./logger-bridge.js?v=7"></script>
+  <script src="./liquid.js?v=7"></script>
+</body>
+</html>
