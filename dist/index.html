@@ -546,8 +546,10 @@
       <div class="tabbar lg-pill" role="tablist" aria-label="Tools">
         <span class="tab-thumb" aria-hidden="true"></span>
         <button class="tab is-active lg-skip" data-tab="media" role="tab" aria-selected="true">Converter</button>
+        <button class="tab lg-skip" data-tab="extract" role="tab" aria-selected="false">Extract</button>
         <button class="tab lg-skip" data-tab="piano" role="tab" aria-selected="false">Transcribe</button>
         <button class="tab lg-skip" data-tab="analyzer" role="tab" aria-selected="false">Loudness</button>
+        <button class="tab lg-skip" data-tab="transform" role="tab" aria-selected="false">Transform</button>
         <button class="tab lg-skip" data-tab="transfer" role="tab" aria-selected="false">Transfer</button>
         <button class="tab lg-skip" data-tab="guide" role="tab" aria-selected="false">Guide</button>
       </div>
@@ -557,6 +559,16 @@
       <section class="panel is-active" data-panel="media" role="tabpanel">
         <div class="panel-stage">
           <iframe class="tool-frame" title="Media Converter" src="./media-converter-clean.html?v=7" loading="eager"></iframe>
+        </div>
+      </section>
+      <section class="panel" data-panel="extract" role="tabpanel">
+        <div class="panel-stage">
+          <iframe class="tool-frame" title="Media Extractor" data-src="./extractor.html?v=1"></iframe>
+          <div class="panel-placeholder" data-placeholder>
+            <div class="panel-spinner"></div>
+            <div class="panel-placeholder-title">Loading Extract</div>
+            <div class="panel-placeholder-sub">Looking for your local media helper&hellip;</div>
+          </div>
         </div>
       </section>
       <section class="panel" data-panel="piano" role="tabpanel">
@@ -576,6 +588,16 @@
             <div class="panel-spinner"></div>
             <div class="panel-placeholder-title">Loading Loudness Analyzer</div>
             <div class="panel-placeholder-sub">Booting the Web Audio engine and MathJax renderer locally&hellip;</div>
+          </div>
+        </div>
+      </section>
+      <section class="panel" data-panel="transform" role="tabpanel">
+        <div class="panel-stage">
+          <iframe class="tool-frame" title="Audio Transformer" data-src="./transformer.html?v=1"></iframe>
+          <div class="panel-placeholder" data-placeholder>
+            <div class="panel-spinner"></div>
+            <div class="panel-placeholder-title">Loading Transform</div>
+            <div class="panel-placeholder-sub">Preparing the spectral + temporal engine&hellip;</div>
           </div>
         </div>
       </section>
@@ -783,6 +805,53 @@
         pendingTransferCode = null;
         // Clean the URL so a refresh doesn't retry a stale code.
         history.replaceState(null, "", location.pathname);
+      }
+    });
+
+    // ---- Cross-tab media handoff router ----
+    // A tool (Extract, Transform) posts {type:"media-handoff", target, name,
+    // mime, buffer}. We switch to the target tab, then hand the bytes to that
+    // tool's iframe once it reports {type:"tool-ready", tool}.
+    const HANDOFF_MAP = {
+      transformer: { tab: "transform", msg: "tf-load" },
+      media: { tab: "media", msg: "mc-load" },
+    };
+    const readyTools = new Set();
+    let pendingHandoff = null;
+
+    function iframeForTab(tab) {
+      const panel = panels.find((p) => p.dataset.panel === tab);
+      return panel ? panel.querySelector("iframe") : null;
+    }
+    function tryDeliverHandoff() {
+      if (!pendingHandoff) return;
+      if (!readyTools.has(pendingHandoff.target)) return;
+      const map = HANDOFF_MAP[pendingHandoff.target];
+      const iframe = iframeForTab(map.tab);
+      if (iframe && iframe.contentWindow) {
+        const p = pendingHandoff.payload;
+        try {
+          iframe.contentWindow.postMessage(
+            { type: map.msg, name: p.name, mime: p.mime, buffer: p.buffer },
+            "*", [p.buffer]
+          );
+        } catch (e) { /* ignore */ }
+      }
+      pendingHandoff = null;
+    }
+
+    window.addEventListener("message", (ev) => {
+      const d = ev.data;
+      if (!d) return;
+      if (d.type === "tool-ready" && d.tool) {
+        readyTools.add(d.tool);
+        tryDeliverHandoff();
+      } else if (d.type === "media-handoff") {
+        const map = HANDOFF_MAP[d.target];
+        if (!map) return;
+        pendingHandoff = { target: d.target, payload: { name: d.name, mime: d.mime, buffer: d.buffer } };
+        activate(map.tab);
+        tryDeliverHandoff();
       }
     });
 

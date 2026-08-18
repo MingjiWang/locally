@@ -676,6 +676,22 @@
       convertBtn.disabled = !(engineLoaded && currentFile);
     });
 
+    // Accept an in-memory file handed over from another tab (Extract / Transform).
+    window.addEventListener("message", (ev) => {
+      const d = ev.data;
+      if (!d || d.type !== "mc-load" || !d.buffer) return;
+      try {
+        const file = new File([d.buffer], d.name || "handoff.bin", { type: d.mime || "application/octet-stream" });
+        currentFile = file;
+        fileLabel.textContent = `Loaded: ${file.name}`;
+        convertBtn.disabled = !(engineLoaded && currentFile);
+        log(`📥 received ${file.name} from another tab (${file.size} bytes)`);
+        status(engineLoaded ? "File received — choose a format and Convert." : "File received — click Load Engine, then Convert.");
+      } catch (e) { log("handoff receive failed: " + (e.message || e)); }
+    });
+    // Tell the shell this tool can receive handoffs.
+    try { window.parent.postMessage({ type: "tool-ready", tool: "media" }, "*"); } catch (e) {}
+
     initBtn.addEventListener("click", async () => {
       log("▶ Load Engine clicked");
 

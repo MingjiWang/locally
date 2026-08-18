@@ -10,6 +10,8 @@
   if (path.includes("media-converter")) { source = "media"; label = "Converter"; }
   else if (path.includes("piano")) { source = "piano"; label = "Piano"; }
   else if (path.includes("analyzer")) { source = "analyzer"; label = "Analyzer"; }
+  else if (path.includes("extractor")) { source = "extract"; label = "Extract"; }
+  else if (path.includes("transformer")) { source = "transform"; label = "Transform"; }
 
   function send(message) {
     if (!message) return;
